@@ -598,3 +598,12 @@ footer p {
   font-style: italic;
   margin-bottom: 8px;
 }
+.admin-delete-btn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  background-color: #c1272d;
+}
+
+.admin-delete-btn:hover {
+  background-color: #971e22;
+}

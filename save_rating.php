@@ -1,17 +1,26 @@
 <?php
+session_start();
 include 'db_connect.php';
 
-$rater = $_POST['rater_name'];
-$target_id = $_POST['target_id'];
-$target_name = $_POST['target_name'];
-$rating = $_POST['rating'];
-$comment = $_POST['comment'];
+if (!isset($_SESSION['profileName'])) {
+  echo "<p>You must be logged in to rate someone.</p>";
+  echo "<a href='login.php'>Log In</a>";
+  exit;
+}
 
-if (strtolower($rater) == strtolower($target_name)) {
+$rater = $_SESSION['profileName'];
+$target_id = intval($_POST['target_id']);
+$target_name = $_POST['target_name'];
+$rating = intval($_POST['rating']);
+$comment = $conn->real_escape_string($_POST['comment']);
+
+if ($rater == $target_name) {
   echo "<p>You can't rate yourself!</p>";
   echo "<a href='browse.php'>Back to Browse Skills</a>";
 } else {
-  $sql = "INSERT INTO ratings (rater_name, target_id, target_name, rating, comment) VALUES ('$rater', '$target_id', '$target_name', '$rating', '$comment')";
+  $r = $conn->real_escape_string($rater);
+  $tn = $conn->real_escape_string($target_name);
+  $sql = "INSERT INTO ratings (rater_name, target_id, target_name, rating, comment) VALUES ('$r', $target_id, '$tn', $rating, '$comment')";
   if ($conn->query($sql) === TRUE) {
     echo "<p>Thanks for your feedback!</p>";
     echo "<a href='browse.php'>Back to Browse Skills</a>";

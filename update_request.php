@@ -1,19 +1,25 @@
 <?php
+session_start();
 include 'db_connect.php';
 
-$id = $_GET['id'];
-$action = $_GET['action']; // "accept" or "decline"
-$name = $_GET['name'];
-
-if ($action == "accept") {
-  $status = "accepted";
-} else {
-  $status = "declined";
+if (!isset($_SESSION['profileName'])) {
+  header("Location: login.php");
+  exit;
 }
 
-$sql = "UPDATE requests SET status = '$status' WHERE id = $id";
-$conn->query($sql);
+$id = intval($_GET['id']);
+$action = $_GET['action'];
+$currentUser = $conn->real_escape_string($_SESSION['profileName']);
 
-header("Location: requests.php?name=" . urlencode($name));
+$check = $conn->query("SELECT * FROM requests WHERE id = $id AND target_name = '$currentUser'");
+if ($check->num_rows == 0) {
+  echo "You are not authorized to update this request.";
+  exit;
+}
+
+$status = ($action == "accept") ? "accepted" : "declined";
+$conn->query("UPDATE requests SET status = '$status' WHERE id = $id");
+
+header("Location: requests.php?view=received");
 exit;
 ?>

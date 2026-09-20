@@ -1,42 +1,16 @@
 const getStartedBtn = document.getElementById("getStartedBtn");
+const currentUser = document.body.dataset.user;
 
 if (getStartedBtn) {
   getStartedBtn.addEventListener("click", function () {
-    window.location.href = "profile.html";
+    window.location.href = currentUser ? "browse.php" : "profile.php";
   });
 }
 
-// Only run this code if we're on profile.html
-const profileForm = document.getElementById("profileForm");
-
-// If we're on profile.html and there's saved data, show it
-if (profileForm) {
-  const savedProfile = localStorage.getItem("myProfile");
-
-  if (savedProfile) {
-    const profile = JSON.parse(savedProfile);
-
-    document.getElementById("name").value = profile.name;
-    document.getElementById("teachSkill").value = profile.teachSkill;
-    document.getElementById("learnSkill").value = profile.learnSkill;
-  }
-}
-// Remember the user's name locally (for notification badge)
-if (profileForm) {
-  profileForm.addEventListener("submit", function () {
-    const nameField = document.getElementById("name");
-    if (nameField && nameField.value) {
-      localStorage.setItem("myName", nameField.value);
-    }
-  });
-}
-
-// Show a notification badge for pending requests, if we know the user's name
-const savedName = localStorage.getItem("myName");
 const requestsLink = document.querySelector('a[href="requests.php"]');
 
-if (savedName && requestsLink) {
-  fetch("notifications.php?name=" + encodeURIComponent(savedName))
+if (currentUser && requestsLink) {
+  fetch("notifications.php?name=" + encodeURIComponent(currentUser))
     .then(function (response) {
       return response.json();
     })

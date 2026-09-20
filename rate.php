@@ -1,34 +1,39 @@
 <?php
+session_start();
 include 'db_connect.php';
-$target_id = $_GET['id'];
+
+if (!isset($_SESSION['profileName'])) {
+  header("Location: login.php");
+  exit;
+}
+
+$target_id = intval($_GET['id']);
 $target_name = $_GET['name'];
+$currentUser = $_SESSION['profileName'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Rate <?php echo $target_name; ?> - Skill Connect</title>
+  <title>Rate <?php echo htmlspecialchars($target_name); ?> - Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-user="<?php echo htmlspecialchars($currentUser); ?>">
   <nav>
     <a href="index.php">Home</a>
-    <a href="profile.html">My Profile</a>
+    <a href="profile.php">My Profile</a>
     <a href="browse.php">Browse Skills</a>
     <a href="requests.php">My Requests</a>
+    <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
   </nav>
   <header>
-    <h1>Rate <?php echo $target_name; ?></h1>
+    <h1>Rate <?php echo htmlspecialchars($target_name); ?></h1>
     <p>Share your experience learning from them.</p>
   </header>
   <main>
     <form action="save_rating.php" method="POST">
       <input type="hidden" name="target_id" value="<?php echo $target_id; ?>">
-      <input type="hidden" name="target_name" value="<?php echo $target_name; ?>">
-      <div class="form-group">
-        <label for="rater_name">Your Name</label>
-        <input type="text" id="rater_name" name="rater_name" required>
-      </div>
+      <input type="hidden" name="target_name" value="<?php echo htmlspecialchars($target_name); ?>">
       <div class="form-group">
         <label for="rating">Rating</label>
         <select id="rating" name="rating" required>

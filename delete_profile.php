@@ -1,23 +1,28 @@
 <?php
+session_start();
 include 'db_connect.php';
 
-$name = $_POST['name'];
-$password = $_POST['password'];
-
-$result = $conn->query("SELECT id, password FROM users WHERE name = '$name'");
-
-if ($result->num_rows == 0) {
-  echo "<p>No profile found with that name.</p>";
-} else {
-  $user = $result->fetch_assoc();
-  if (password_verify($password, $user['password'])) {
-    $conn->query("DELETE FROM users WHERE name = '$name'");
-    echo "<p>Your profile has been deleted.</p>";
-  } else {
-    echo "<p>Incorrect password. Profile not deleted.</p>";
-  }
+if (!isset($_SESSION['profileName'])) {
+  echo "<p>You must be logged in to delete a profile.</p>";
+  echo "<a href='login.php'>Log In</a>";
+  exit;
 }
 
-echo "<a href='browse.php'>Back to Browse Skills</a>";
+$name = $_SESSION['profileName'];
+$password = $_POST['password'];
+
+$result = $conn->query("SELECT password FROM users WHERE name = '" . $conn->real_escape_string($name) . "'");
+$user = $result->fetch_assoc();
+
+if ($user && password_verify($password, $user['password'])) {
+  $conn->query("DELETE FROM users WHERE name = '" . $conn->real_escape_string($name) . "'");
+  session_destroy();
+  echo "<p>Your profile has been deleted.</p>";
+  echo "<a href='index.php'>Back to Home</a>";
+} else {
+  echo "<p>Incorrect password. Profile not deleted.</p>";
+  echo "<a href='profile.php'>Back to Profile</a>";
+}
+
 $conn->close();
 ?>

@@ -1,5 +1,8 @@
 <?php
+session_start();
 include 'db_connect.php';
+
+$loggedIn = isset($_SESSION['profileName']);
 
 $memberCount = 0;
 $connectionCount = 0;
@@ -23,13 +26,19 @@ if ($result2) {
   <title>Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-user="<?php echo $loggedIn ? htmlspecialchars($_SESSION['profileName']) : ''; ?>">
 
   <nav>
     <a href="index.php">Home</a>
-    <a href="profile.html">My Profile</a>
-    <a href="browse.php">Browse Skills</a>
-    <a href="requests.php">My Requests</a>
+    <?php if ($loggedIn) { ?>
+      <a href="profile.php">My Profile</a>
+      <a href="browse.php">Browse Skills</a>
+      <a href="requests.php">My Requests</a>
+      <a href="logout.php">Logout (<?php echo htmlspecialchars($_SESSION['profileName']); ?>)</a>
+    <?php } else { ?>
+      <a href="profile.php">Create Profile</a>
+      <a href="login.php">Login</a>
+    <?php } ?>
   </nav>
 
   <header>
@@ -72,9 +81,9 @@ if ($result2) {
   </div>
 
   <script src="script.js"></script>
-<footer>
-  <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
-  <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
-</footer>
+  <footer>
+    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
+  </footer>
 </body>
 </html>
