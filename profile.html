@@ -28,10 +28,13 @@
         <label for="mobile">Mobile Number</label>
         <input type="tel" id="mobile" name="mobile" placeholder="e.g. 9876543210" pattern="[0-9]{10}" required>
       </div>
-
+      <div class="form-group">
+        <label for="password">Password (to protect your profile)</label>
+        <input type="password" id="password" name="password" placeholder="Choose a password" required>
+      </div>
       <div class="form-group">
         <label for="teachSkill">Skill You Can Teach</label>
-        <input type="text" id="teachSkill" name="teachSkill" placeholder="e.g. Guitar" required>
+        <input type="text" id="teachSkill" name="teachSkill" placeholder="e.g. Guitar (optional)">
       </div>
 
       <div class="form-group">
@@ -50,24 +53,27 @@
 
       <div class="form-group">
         <label for="learnSkill">Skill You Want to Learn</label>
-        <input type="text" id="learnSkill" name="learnSkill" placeholder="e.g. Photography" required>
+        <input type="text" id="learnSkill" name="learnSkill" placeholder="e.g. Photography (optional)">
       </div>
 
       <button type="submit">Save Profile</button>
     </form>
-      <div class="danger-zone">
-        <h3>Delete a Profile</h3>
-        <p>Enter a name to permanently remove that profile.</p>
-        <form action="delete_profile.php" method="POST" onsubmit="return confirm('Are you sure? This cannot be undone.');">
-          <input type="text" name="name" placeholder="Name to delete" required>
-          <button type="submit" class="deleteBtn">Delete Profile</button>
-        </form>
-      </div>
+
+    <div class="danger-zone">
+      <h3>Delete Your Profile</h3>
+      <p>Enter your name and password to permanently remove your profile.</p>
+      <form action="delete_profile.php" method="POST" onsubmit="return confirm('Are you sure? This cannot be undone.');">
+        <input type="text" name="name" placeholder="Your name" required>
+        <input type="password" name="password" placeholder="Your password" required>
+        <button type="submit" class="deleteBtn">Delete Profile</button>
+      </form>
+    </div>
   </main>
-<script src="script.js"></script>
-<footer>
-  <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
-  <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
-</footer>
+
+  <script src="script.js"></script>
+  <footer>
+    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
+  </footer>
 </body>
 </html>

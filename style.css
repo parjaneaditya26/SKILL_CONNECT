@@ -592,3 +592,9 @@ footer p {
   .skill-card { width: 100%; max-width: 320px; }
   .stats-section { gap: 30px; }
 }
+.locked-contact {
+  font-size: 0.85rem;
+  color: #999;
+  font-style: italic;
+  margin-bottom: 8px;
+}

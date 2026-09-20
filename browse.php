@@ -1,4 +1,5 @@
 <?php
+session_start();
 include 'db_connect.php';
 
 $search = isset($_GET['search']) ? $_GET['search'] : "";
@@ -13,6 +14,46 @@ if ($category != "") {
 }
 
 $result = $conn->query($sql);
+
+if (!isset($_SESSION['profileName'])) {
+  ?>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Browse Skills - Skill Connect</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <nav>
+      <a href="index.php">Home</a>
+      <a href="profile.html">My Profile</a>
+      <a href="browse.php">Browse Skills</a>
+      <a href="requests.php">My Requests</a>
+    </nav>
+    <header>
+      <h1>Create a Profile First</h1>
+      <p>You need a profile before you can browse and connect with others.</p>
+    </header>
+    <main>
+      <div class="empty-state">
+        <h3>No profile found</h3>
+        <p>Create your profile to start browsing and connecting with people.</p>
+        <a href="profile.html" class="connectBtn" style="display:inline-block; text-decoration:none; margin-top:12px;">Create Profile</a>
+      </div>
+    </main>
+    <footer>
+      <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    </footer>
+  </body>
+  </html>
+  <?php
+  exit;
+}
+
+$myTeach = isset($_GET['my_teach']) ? $_GET['my_teach'] : "";
+$myLearn = isset($_GET['my_learn']) ? $_GET['my_learn'] : "";
+$currentUser = $_SESSION['profileName'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -51,10 +92,6 @@ $result = $conn->query($sql);
       <button type="submit">Search</button>
     </form>
 
-    <?php
-    $myTeach = isset($_GET['my_teach']) ? $_GET['my_teach'] : "";
-    $myLearn = isset($_GET['my_learn']) ? $_GET['my_learn'] : "";
-    ?>
     <form class="match-form" action="browse.php" method="GET">
       <p>Find your perfect match:</p>
       <input type="text" name="my_teach" placeholder="Skill you teach" value="<?php echo $myTeach; ?>">
@@ -72,12 +109,21 @@ $result = $conn->query($sql);
               $isMatch = true;
             }
           }
-          ?>
-          <?php
+
           $avgResult = $conn->query("SELECT AVG(rating) as avg_rating, COUNT(*) as total FROM ratings WHERE target_id = " . $row['id']);
           $avgRow = $avgResult->fetch_assoc();
           $avgRating = $avgRow['avg_rating'] ? round($avgRow['avg_rating'], 1) : null;
           $ratingCount = $avgRow['total'];
+
+          $showContact = false;
+          if ($row['name'] == $currentUser) {
+            $showContact = true;
+          } else {
+            $acceptedCheck = $conn->query("SELECT id FROM requests WHERE status = 'accepted' AND ((requester_name = '$currentUser' AND target_id = {$row['id']}) OR (requester_name = '{$row['name']}' AND target_name = '$currentUser'))");
+            if ($acceptedCheck->num_rows > 0) {
+              $showContact = true;
+            }
+          }
           ?>
           <div class="skill-card <?php echo $isMatch ? 'perfect-match' : ''; ?>">
             <?php if ($isMatch) { ?><span class="match-badge">✨ Perfect Match</span><?php } ?>
@@ -91,7 +137,11 @@ $result = $conn->query($sql);
             <?php } ?>
             <p><strong>Can teach:</strong> <?php echo $row['teach_skill']; ?></p>
             <p><strong>Wants to learn:</strong> <?php echo $row['learn_skill']; ?></p>
-            <p><strong>Contact:</strong> <?php echo $row['mobile']; ?></p>
+            <?php if ($showContact) { ?>
+              <p><strong>Contact:</strong> <?php echo $row['mobile']; ?></p>
+            <?php } else { ?>
+              <p class="locked-contact">🔒 Contact visible after connection is accepted</p>
+            <?php } ?>
             <form action="connect.php" method="POST" class="connect-form">
               <input type="hidden" name="target_id" value="<?php echo $row['id']; ?>">
               <input type="hidden" name="target_name" value="<?php echo $row['name']; ?>">
