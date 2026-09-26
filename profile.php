@@ -52,6 +52,12 @@ if ($loggedIn) {
           <?php echo $loggedIn ? "readonly" : "required"; ?>>
       </div>
       <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email"
+          value="<?php echo $loggedIn ? htmlspecialchars($user['email']) : ''; ?>"
+          placeholder="e.g. you@gmail.com" required>
+      </div>
+      <div class="form-group">
         <label for="mobile">Mobile Number</label>
         <input type="tel" id="mobile" name="mobile"
           value="<?php echo $loggedIn ? htmlspecialchars($user['mobile']) : ''; ?>"
@@ -59,9 +65,13 @@ if ($loggedIn) {
       </div>
       <div class="form-group">
         <label for="password"><?php echo $loggedIn ? "New Password (leave blank to keep current)" : "Choose a Password"; ?></label>
-        <input type="password" id="password" name="password"
-          placeholder="<?php echo $loggedIn ? 'Leave blank to keep current' : 'Choose a password'; ?>"
-          <?php echo $loggedIn ? "" : "required"; ?>>
+        <div class="password-wrap">
+          <input type="password" id="password" name="password"
+            placeholder="<?php echo $loggedIn ? 'Leave blank to keep current' : 'Choose a password'; ?>"
+            minlength="6"
+            <?php echo $loggedIn ? "" : "required"; ?>>
+          <button type="button" class="toggle-password" data-target="password">👁</button>
+        </div>
       </div>
       <div class="form-group">
         <label for="teachSkill">Skill You Can Teach</label>
@@ -102,7 +112,10 @@ if ($loggedIn) {
         <h3>Delete Your Profile</h3>
         <p>Enter your password to permanently remove your profile. Only you can do this.</p>
         <form action="delete_profile.php" method="POST" onsubmit="return confirm('Are you sure? This cannot be undone.');">
-          <input type="password" name="password" placeholder="Your password" required>
+          <div class="password-wrap">
+            <input type="password" id="deletePassword" name="password" placeholder="Your password" required>
+            <button type="button" class="toggle-password" data-target="deletePassword">👁</button>
+          </div>
           <button type="submit" class="deleteBtn">Delete Profile</button>
         </form>
       </div>

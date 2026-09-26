@@ -1,8 +1,10 @@
 <?php
 session_start();
+if (!isset($_SESSION['isAdmin'])) {
+  header("Location: admin_login.php");
+  exit;
+}
 include 'db_connect.php';
-
-$loggedIn = isset($_SESSION['profileName']);
 
 $users = $conn->query("SELECT * FROM users ORDER BY id DESC");
 $requests = $conn->query("SELECT * FROM requests ORDER BY id DESC");
@@ -14,18 +16,10 @@ $requests = $conn->query("SELECT * FROM requests ORDER BY id DESC");
   <title>Admin Dashboard - Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body data-user="<?php echo $loggedIn ? htmlspecialchars($_SESSION['profileName']) : ''; ?>">
+<body data-user="">
   <nav>
     <a href="index.php">Home</a>
-    <?php if ($loggedIn) { ?>
-      <a href="profile.php">My Profile</a>
-      <a href="browse.php">Browse Skills</a>
-      <a href="requests.php">My Requests</a>
-      <a href="logout.php">Logout (<?php echo htmlspecialchars($_SESSION['profileName']); ?>)</a>
-    <?php } else { ?>
-      <a href="profile.php">Create Profile</a>
-      <a href="login.php">Login</a>
-    <?php } ?>
+    <a href="admin_logout.php">Admin Logout</a>
   </nav>
   <header>
     <h1>Admin Dashboard</h1>
@@ -35,11 +29,12 @@ $requests = $conn->query("SELECT * FROM requests ORDER BY id DESC");
     <h2 style="color:#14323b; margin-bottom:16px;">All Users (<?php echo $users->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
-        <tr><th>ID</th><th>Name</th><th>Mobile</th><th>Teaches</th><th>Wants to Learn</th><th>Category</th><th>Joined</th><th>Action</th></tr>
+        <tr><th>ID</th><th>Name</th><th>Email</th><th>Mobile</th><th>Teaches</th><th>Wants to Learn</th><th>Category</th><th>Joined</th><th>Action</th></tr>
         <?php while ($u = $users->fetch_assoc()) { ?>
           <tr>
             <td><?php echo $u['id']; ?></td>
             <td><?php echo htmlspecialchars($u['name']); ?></td>
+            <td><?php echo htmlspecialchars($u['email']); ?></td>
             <td><?php echo htmlspecialchars($u['mobile']); ?></td>
             <td><?php echo htmlspecialchars($u['teach_skill']); ?></td>
             <td><?php echo htmlspecialchars($u['learn_skill']); ?></td>

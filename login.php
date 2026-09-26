@@ -51,11 +51,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+        <div class="password-wrap">
+          <input type="password" id="password" name="password" required>
+          <button type="button" class="toggle-password" data-target="password">👁</button>
+        </div>
       </div>
       <button type="submit">Log In</button>
     </form>
     <p style="text-align:center; margin-top:16px; font-size:0.9rem; color:#666;">
+      <a href="forgot_password.php" style="color:#1d4ed8; font-weight:600;">Forgot password?</a>
+    </p>
+    <p style="text-align:center; margin-top:8px; font-size:0.9rem; color:#666;">
       New here? <a href="profile.php" style="color:#1d4ed8; font-weight:600;">Create a profile</a>
     </p>
   </main>

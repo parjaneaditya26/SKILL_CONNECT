@@ -23,3 +23,16 @@ if (currentUser && requestsLink) {
       }
     });
 }
+
+document.querySelectorAll(".toggle-password").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    const input = document.getElementById(btn.dataset.target);
+    if (input.type === "password") {
+      input.type = "text";
+      btn.textContent = "🙈";
+    } else {
+      input.type = "password";
+      btn.textContent = "👁";
+    }
+  });
+});

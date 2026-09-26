@@ -118,6 +118,7 @@ $currentUser = $_SESSION['profileName'];
           $ratingCount = $avgRow['total'];
 
           $showContact = false;
+          $myRequestStatus = null;
           if ($row['name'] == $currentUser) {
             $showContact = true;
           } else {
@@ -127,13 +128,19 @@ $currentUser = $_SESSION['profileName'];
             if ($acceptedCheck->num_rows > 0) {
               $showContact = true;
             }
+
+            $statusCheck = $conn->query("SELECT status FROM requests WHERE requester_name = '$cu' AND target_id = {$row['id']} ORDER BY id DESC LIMIT 1");
+            if ($statusCheck->num_rows > 0) {
+              $srow = $statusCheck->fetch_assoc();
+              $myRequestStatus = $srow['status'];
+            }
           }
           ?>
           <div class="skill-card <?php echo $isMatch ? 'perfect-match' : ''; ?>">
             <?php if ($isMatch) { ?><span class="match-badge">✨ Perfect Match</span><?php } ?>
             <div class="avatar"><?php echo strtoupper(substr($row['name'], 0, 1)); ?></div>
             <span class="category-tag"><?php echo htmlspecialchars($row['category']); ?></span>
-            <h3><?php echo htmlspecialchars($row['name']); ?></h3>
+            <h3><a href="profile_view.php?id=<?php echo $row['id']; ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars($row['name']); ?></a></h3>
             <?php if ($avgRating) { ?>
               <p class="rating-display">⭐ <?php echo $avgRating; ?> (<?php echo $ratingCount; ?> reviews)</p>
             <?php } else { ?>
@@ -149,6 +156,10 @@ $currentUser = $_SESSION['profileName'];
 
             <?php if ($row['name'] == $currentUser) { ?>
               <p style="text-align:center; font-weight:600; color:#1d4ed8; margin-top:10px;">This is your profile</p>
+            <?php } elseif ($myRequestStatus == 'pending') { ?>
+              <p class="status-label status-pending">Request Pending</p>
+            <?php } elseif ($myRequestStatus == 'accepted') { ?>
+              <p class="status-label status-accepted">✓ Connected</p>
             <?php } else { ?>
               <form action="connect.php" method="POST" class="connect-form">
                 <input type="hidden" name="target_id" value="<?php echo $row['id']; ?>">

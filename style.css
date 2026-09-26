@@ -18,7 +18,6 @@ h1, h2, h3 {
   font-family: 'Poppins', sans-serif;
 }
 
-/* Navbar */
 nav {
   background-color: #0d0d0d;
   padding: 16px 20px;
@@ -55,7 +54,6 @@ nav a:hover {
   margin-left: 6px;
 }
 
-/* Header */
 header {
   background: linear-gradient(120deg, #0d0d0d 0%, #7a0c1e 45%, #1d4ed8 100%);
   color: white;
@@ -80,7 +78,6 @@ main {
   padding: 50px 20px;
 }
 
-/* Buttons */
 button, .connectBtn {
   background-color: #e63946;
   color: white;
@@ -102,7 +99,6 @@ button:active, .connectBtn:active {
   transform: translateY(0);
 }
 
-/* Stats section */
 .stats-section {
   display: flex;
   justify-content: center;
@@ -129,7 +125,6 @@ button:active, .connectBtn:active {
   margin-top: 4px;
 }
 
-/* How it works */
 .how-it-works {
   padding: 60px 20px;
   max-width: 900px;
@@ -182,7 +177,6 @@ button:active, .connectBtn:active {
   color: #666;
 }
 
-/* Forms */
 form:not(.search-form):not(.connect-form):not(.match-form) {
   max-width: 420px;
   margin: 40px auto 0;
@@ -226,7 +220,6 @@ form button[type="submit"] {
   margin-top: 4px;
 }
 
-/* Search form */
 .search-form {
   max-width: 500px;
   margin: 0 auto 20px;
@@ -253,7 +246,6 @@ form button[type="submit"] {
   padding: 12px 24px;
 }
 
-/* Match form */
 .match-form {
   max-width: 500px;
   margin: 0 auto 30px;
@@ -298,7 +290,6 @@ form button[type="submit"] {
   margin-bottom: 10px;
 }
 
-/* Skill cards */
 .skill-list {
   display: flex;
   flex-wrap: wrap;
@@ -391,7 +382,6 @@ form button[type="submit"] {
   border-color: #1d4ed8;
 }
 
-/* Requests page */
 .tabs {
   display: flex;
   justify-content: center;
@@ -481,7 +471,11 @@ form button[type="submit"] {
   color: #c1272d;
 }
 
-/* Danger zone */
+.status-pending {
+  background-color: #fff4e0;
+  color: #b8860b;
+}
+
 .danger-zone {
   max-width: 420px;
   margin: 30px auto 0;
@@ -521,7 +515,6 @@ form button[type="submit"] {
   background-color: #971e22;
 }
 
-/* Empty state */
 .empty-state {
   background: white;
   border-radius: 16px;
@@ -541,7 +534,6 @@ form button[type="submit"] {
   font-size: 0.9rem;
 }
 
-/* Admin dashboard */
 .admin-table-wrap {
   overflow-x: auto;
   background: white;
@@ -571,7 +563,6 @@ form button[type="submit"] {
   background-color: #f7f8fa;
 }
 
-/* Footer */
 footer {
   background-color: #0d0d0d;
   color: #cfd8dc;
@@ -584,20 +575,13 @@ footer p {
   margin: 4px 0;
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-  header h1 { font-size: 2.1rem; }
-  header { padding: 55px 16px; }
-  nav a { margin: 0 10px; font-size: 0.85rem; }
-  .skill-card { width: 100%; max-width: 320px; }
-  .stats-section { gap: 30px; }
-}
 .locked-contact {
   font-size: 0.85rem;
   color: #999;
   font-style: italic;
   margin-bottom: 8px;
 }
+
 .admin-delete-btn {
   padding: 6px 14px;
   font-size: 0.8rem;
@@ -606,4 +590,39 @@ footer p {
 
 .admin-delete-btn:hover {
   background-color: #971e22;
+}
+
+.password-wrap {
+  position: relative;
+}
+
+.password-wrap input {
+  padding-right: 40px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #666;
+}
+
+.toggle-password:hover {
+  background: none;
+  color: #000;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 600px) {
+  header h1 { font-size: 2.1rem; }
+  header { padding: 55px 16px; }
+  nav a { margin: 0 10px; font-size: 0.85rem; }
+  .skill-card { width: 100%; max-width: 320px; }
+  .stats-section { gap: 30px; }
 }
