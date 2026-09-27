@@ -1,6 +1,13 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
+@include 'mailer.php';
+
+if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+  echo "<p>Security check failed. Please try again.</p><a href='profile.php'>Go Back</a>";
+  exit;
+}
 
 $loggedIn = isset($_SESSION['profileName']);
 
@@ -49,13 +56,30 @@ if ($loggedIn) {
     $conn->close();
     exit;
   }
+
+  $emailCheck = $conn->query("SELECT id FROM users WHERE email = '$email'");
+  if ($emailCheck->num_rows > 0) {
+    echo "<p>That email is already registered to another profile. Please log in instead, or use a different email.</p>";
+    echo "<a href='login.php'>Log In</a> | <a href='profile.php'>Try Again</a>";
+    $conn->close();
+    exit;
+  }
+
   $hashed = password_hash($password, PASSWORD_DEFAULT);
-  $sql = "INSERT INTO users (name, mobile, email, password, teach_skill, learn_skill, category) VALUES ('$name', '$mobile', '$email', '$hashed', '$teachSkill', '$learnSkill', '$category')";
-  $message = "Profile created successfully! You are now logged in.";
+  $verifyToken = bin2hex(random_bytes(16));
+  $vt = $conn->real_escape_string($verifyToken);
+  $sql = "INSERT INTO users (name, mobile, email, password, teach_skill, learn_skill, category, verify_token) VALUES ('$name', '$mobile', '$email', '$hashed', '$teachSkill', '$learnSkill', '$category', '$vt')";
+  $message = "Profile created successfully! You are now logged in. Check your email to verify your account.";
 }
 
 if ($conn->query($sql) === TRUE) {
   $_SESSION['profileName'] = $name;
+
+  if (!$loggedIn && function_exists('sendEmail')) {
+    $verifyLink = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/verify_email.php?token=$verifyToken";
+    sendEmail($email, $name, "Verify Your Skill Connect Email", "<p>Hi " . htmlspecialchars($name) . ",</p><p>Welcome to Skill Connect! Click below to verify your email:</p><p><a href='$verifyLink'>Verify Email</a></p>");
+  }
+
   echo "<p>$message</p>";
   echo "<a href='browse.php'>Go to Browse Skills</a>";
 } else {

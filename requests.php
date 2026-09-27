@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
 
 if (!isset($_SESSION['profileName'])) {
   ?>
@@ -40,6 +41,7 @@ if (!isset($_SESSION['profileName'])) {
 $currentUser = $_SESSION['profileName'];
 $view = isset($_GET['view']) ? $_GET['view'] : "received";
 $cu = $conn->real_escape_string($currentUser);
+$csrf = csrf_token();
 
 if ($view == "sent") {
   $sql = "SELECT * FROM requests WHERE requester_name = '$cu'";
@@ -62,6 +64,7 @@ $result = $conn->query($sql);
     <a href="profile.php">My Profile</a>
     <a href="browse.php">Browse Skills</a>
     <a href="requests.php">My Requests</a>
+    <a href="connections.php">My Connections</a>
     <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
   </nav>
 
@@ -82,12 +85,15 @@ $result = $conn->query($sql);
           <?php
           $otherName = ($view == "received") ? $row['requester_name'] : $row['target_name'];
           $otherMobile = "";
-          if ($row['status'] == "accepted") {
-            $on = $conn->real_escape_string($otherName);
-            $m = $conn->query("SELECT mobile FROM users WHERE name = '$on'");
-            if ($m && $m->num_rows > 0) {
-              $mrow = $m->fetch_assoc();
-              $otherMobile = $mrow['mobile'];
+          $otherId = null;
+
+          $on = $conn->real_escape_string($otherName);
+          $otherUser = $conn->query("SELECT id, mobile FROM users WHERE name = '$on'");
+          if ($otherUser && $otherUser->num_rows > 0) {
+            $ou = $otherUser->fetch_assoc();
+            $otherId = $ou['id'];
+            if ($row['status'] == "accepted") {
+              $otherMobile = $ou['mobile'];
             }
           }
           ?>
@@ -99,7 +105,7 @@ $result = $conn->query($sql);
             <?php } else { ?>
               <p>You sent a request to connect.</p>
             <?php } ?>
-            <p style="font-size: 0.85rem; color: #777;"><?php echo $row['created_at']; ?></p>
+            <p style="font-size: 0.85rem; color: #777;"><?php echo timeAgo($row['created_at']); ?></p>
 
             <?php if ($row['status'] == "accepted" && $otherMobile) { ?>
               <p><strong>Contact:</strong> <?php echo htmlspecialchars($otherMobile); ?></p>
@@ -107,13 +113,15 @@ $result = $conn->query($sql);
 
             <?php if ($view == "received" && $row['status'] == "pending") { ?>
               <div class="request-actions">
-                <a href="update_request.php?id=<?php echo $row['id']; ?>&action=accept" class="acceptBtn">Accept</a>
-                <a href="update_request.php?id=<?php echo $row['id']; ?>&action=decline" class="declineBtn">Decline</a>
+                <a href="update_request.php?id=<?php echo $row['id']; ?>&action=accept&csrf=<?php echo $csrf; ?>" class="acceptBtn">Accept</a>
+                <a href="update_request.php?id=<?php echo $row['id']; ?>&action=decline&csrf=<?php echo $csrf; ?>" class="declineBtn">Decline</a>
               </div>
             <?php } else { ?>
               <p class="status-label status-<?php echo $row['status']; ?>"><?php echo ucfirst($row['status']); ?></p>
-              <?php if ($row['status'] == "accepted") { ?>
-                <a href="rate.php?id=<?php echo $row['target_id']; ?>&name=<?php echo urlencode($row['target_name']); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:10px;">Rate this person</a>
+              <?php if ($row['status'] == "accepted" && $otherId) { ?>
+                <a href="messages.php?with=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:10px;">Message</a>
+                <a href="rate.php?id=<?php echo $otherId; ?>&name=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;">Rate this person</a>
+                <a href="disconnect.php?id=<?php echo $row['id']; ?>&view=<?php echo $view; ?>&csrf=<?php echo $csrf; ?>" class="declineBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;" onclick="return confirm('Disconnect from this person?');">Disconnect</a>
               <?php } ?>
             <?php } ?>
           </div>

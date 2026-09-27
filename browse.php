@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
 
 $search = isset($_GET['search']) ? $_GET['search'] : "";
 $category = isset($_GET['category']) ? $_GET['category'] : "";
@@ -55,6 +56,7 @@ if (!isset($_SESSION['profileName'])) {
 $myTeach = isset($_GET['my_teach']) ? $_GET['my_teach'] : "";
 $myLearn = isset($_GET['my_learn']) ? $_GET['my_learn'] : "";
 $currentUser = $_SESSION['profileName'];
+$csrf = csrf_token();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -70,6 +72,7 @@ $currentUser = $_SESSION['profileName'];
     <a href="profile.php">My Profile</a>
     <a href="browse.php">Browse Skills</a>
     <a href="requests.php">My Requests</a>
+    <a href="connections.php">My Connections</a>
     <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
   </nav>
 
@@ -129,7 +132,7 @@ $currentUser = $_SESSION['profileName'];
               $showContact = true;
             }
 
-            $statusCheck = $conn->query("SELECT status FROM requests WHERE requester_name = '$cu' AND target_id = {$row['id']} ORDER BY id DESC LIMIT 1");
+            $statusCheck = $conn->query("SELECT status FROM requests WHERE (requester_name = '$cu' AND target_id = {$row['id']}) OR (requester_name = '$rn' AND target_name = '$cu') ORDER BY id DESC LIMIT 1");
             if ($statusCheck->num_rows > 0) {
               $srow = $statusCheck->fetch_assoc();
               $myRequestStatus = $srow['status'];
@@ -140,7 +143,10 @@ $currentUser = $_SESSION['profileName'];
             <?php if ($isMatch) { ?><span class="match-badge">✨ Perfect Match</span><?php } ?>
             <div class="avatar"><?php echo strtoupper(substr($row['name'], 0, 1)); ?></div>
             <span class="category-tag"><?php echo htmlspecialchars($row['category']); ?></span>
-            <h3><a href="profile_view.php?id=<?php echo $row['id']; ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars($row['name']); ?></a></h3>
+            <h3>
+              <a href="profile_view.php?id=<?php echo $row['id']; ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars($row['name']); ?></a>
+              <?php if ($row['verified']) { ?><span style="color:#1d4ed8; font-size:0.8rem; font-weight:600;"> ✓ Verified</span><?php } ?>
+            </h3>
             <?php if ($avgRating) { ?>
               <p class="rating-display">⭐ <?php echo $avgRating; ?> (<?php echo $ratingCount; ?> reviews)</p>
             <?php } else { ?>
@@ -160,8 +166,10 @@ $currentUser = $_SESSION['profileName'];
               <p class="status-label status-pending">Request Pending</p>
             <?php } elseif ($myRequestStatus == 'accepted') { ?>
               <p class="status-label status-accepted">✓ Connected</p>
+              <a href="messages.php?with=<?php echo urlencode($row['name']); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;">Message</a>
             <?php } else { ?>
               <form action="connect.php" method="POST" class="connect-form">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="target_id" value="<?php echo $row['id']; ?>">
                 <input type="hidden" name="target_name" value="<?php echo htmlspecialchars($row['name']); ?>">
                 <button type="submit" class="connectBtn">Connect</button>

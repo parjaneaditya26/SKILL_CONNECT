@@ -1,30 +1,46 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
 @include 'mailer.php';
 
 $message = "";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  $email = trim($_POST['email']);
-  $e = $conn->real_escape_string($email);
-  $result = $conn->query("SELECT * FROM users WHERE email = '$e'");
-  if ($result->num_rows > 0 && function_exists('sendEmail')) {
-    $user = $result->fetch_assoc();
-    $token = bin2hex(random_bytes(16));
-    $expires = date("Y-m-d H:i:s", strtotime("+1 hour"));
-    $t = $conn->real_escape_string($token);
-    $conn->query("UPDATE users SET reset_token='$t', reset_expires='$expires' WHERE id={$user['id']}");
+  if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+    $message = "Security check failed. Please try again.";
+  } else {
+    $email = trim($_POST['email']);
+    $e = $conn->real_escape_string($email);
+    $result = $conn->query("SELECT * FROM users WHERE email = '$e'");
 
-    $resetLink = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=$token";
-    sendEmail(
-      $email,
-      $user['name'],
-      "Reset Your Skill Connect Password",
-      "<p>Hi " . htmlspecialchars($user['name']) . ",</p><p>Click below to reset your password. This link expires in 1 hour.</p><p><a href='$resetLink'>Reset Password</a></p>"
-    );
+    if ($result->num_rows > 0) {
+      $user = $result->fetch_assoc();
+      $token = bin2hex(random_bytes(16));
+      $t = $conn->real_escape_string($token);
+      $conn->query("UPDATE users SET reset_token='$t', reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id={$user['id']}");
+
+      $resetLink = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=$token";
+
+      $sent = false;
+      if (function_exists('sendEmail')) {
+        $sent = sendEmail(
+          $email,
+          $user['name'],
+          "Reset Your Skill Connect Password",
+          "<p>Hi " . htmlspecialchars($user['name']) . ",</p><p>Click below to reset your password. This link expires in 1 hour.</p><p><a href='$resetLink'>Reset Password</a></p>"
+        );
+      }
+
+      if ($sent) {
+        $message = "A reset link has been sent to $email. Please check your inbox.";
+      } else {
+        $message = "This email is registered, but the reset email could not be sent. Make sure PHPMailer is set up correctly.";
+      }
+    } else {
+      $message = "No account found with that email address.";
+    }
   }
-  $message = "If that email is registered, a reset link has been sent to it.";
 }
 ?>
 <!DOCTYPE html>
@@ -46,9 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </header>
   <main>
     <?php if ($message) { ?>
-      <p style="text-align:center; margin-bottom:16px; font-weight:600; color:#1d4ed8;"><?php echo $message; ?></p>
+      <p style="text-align:center; margin-bottom:16px; font-weight:600; color:#1d4ed8;"><?php echo htmlspecialchars($message); ?></p>
     <?php } ?>
     <form action="forgot_password.php" method="POST">
+      <?php echo csrf_field(); ?>
       <div class="form-group">
         <label for="email">Email Address</label>
         <input type="email" id="email" name="email" required>

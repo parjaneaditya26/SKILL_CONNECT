@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
 
 $loggedIn = isset($_SESSION['profileName']);
 $user = null;
@@ -30,6 +31,7 @@ if ($loggedIn) {
       <a href="profile.php">My Profile</a>
       <a href="browse.php">Browse Skills</a>
       <a href="requests.php">My Requests</a>
+      <a href="connections.php">My Connections</a>
       <a href="logout.php">Logout (<?php echo htmlspecialchars($user['name']); ?>)</a>
     <?php } else { ?>
       <a href="profile.php">Create Profile</a>
@@ -42,8 +44,21 @@ if ($loggedIn) {
     <p><?php echo $loggedIn ? "Update your skills or contact details." : "Tell others what you can teach and what you want to learn."; ?></p>
   </header>
 
+  <?php if ($loggedIn) { ?>
+    <div style="max-width:420px; margin: 0 auto 10px; text-align:center;">
+      <?php if ($user['verified']) { ?>
+        <p style="color:#1d4ed8; font-weight:600; font-size:0.9rem;">✓ Email Verified</p>
+      <?php } else { ?>
+        <p style="color:#b8860b; font-weight:600; font-size:0.9rem;">
+          Email not verified — <a href="resend_verification.php" style="color:#1d4ed8;">Resend verification email</a>
+        </p>
+      <?php } ?>
+    </div>
+  <?php } ?>
+
   <main>
     <form id="profileForm" action="save_profile.php" method="POST">
+      <?php echo csrf_field(); ?>
       <div class="form-group">
         <label for="name">Your Name</label>
         <input type="text" id="name" name="name"
@@ -112,6 +127,7 @@ if ($loggedIn) {
         <h3>Delete Your Profile</h3>
         <p>Enter your password to permanently remove your profile. Only you can do this.</p>
         <form action="delete_profile.php" method="POST" onsubmit="return confirm('Are you sure? This cannot be undone.');">
+          <?php echo csrf_field(); ?>
           <div class="password-wrap">
             <input type="password" id="deletePassword" name="password" placeholder="Your password" required>
             <button type="button" class="toggle-password" data-target="deletePassword">👁</button>

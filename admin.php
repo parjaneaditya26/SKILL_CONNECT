@@ -8,6 +8,7 @@ include 'db_connect.php';
 
 $users = $conn->query("SELECT * FROM users ORDER BY id DESC");
 $requests = $conn->query("SELECT * FROM requests ORDER BY id DESC");
+$reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,10 +27,15 @@ $requests = $conn->query("SELECT * FROM requests ORDER BY id DESC");
     <p>Overview of all users and requests. Admin can remove any entry.</p>
   </header>
   <main style="max-width: 1100px; margin: 0 auto; text-align: left;">
+    <p style="text-align:center; margin-bottom:20px;">
+      <a href="export_users.php" style="color:#1d4ed8; font-weight:600; margin-right:20px;">⬇ Export Users (CSV)</a>
+      <a href="export_requests.php" style="color:#1d4ed8; font-weight:600;">⬇ Export Requests (CSV)</a>
+    </p>
+
     <h2 style="color:#14323b; margin-bottom:16px;">All Users (<?php echo $users->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
-        <tr><th>ID</th><th>Name</th><th>Email</th><th>Mobile</th><th>Teaches</th><th>Wants to Learn</th><th>Category</th><th>Joined</th><th>Action</th></tr>
+        <tr><th>ID</th><th>Name</th><th>Email</th><th>Mobile</th><th>Teaches</th><th>Wants to Learn</th><th>Category</th><th>Verified</th><th>Joined</th><th>Action</th></tr>
         <?php while ($u = $users->fetch_assoc()) { ?>
           <tr>
             <td><?php echo $u['id']; ?></td>
@@ -39,6 +45,7 @@ $requests = $conn->query("SELECT * FROM requests ORDER BY id DESC");
             <td><?php echo htmlspecialchars($u['teach_skill']); ?></td>
             <td><?php echo htmlspecialchars($u['learn_skill']); ?></td>
             <td><?php echo htmlspecialchars($u['category']); ?></td>
+            <td><?php echo $u['verified'] ? 'Yes' : 'No'; ?></td>
             <td><?php echo $u['created_at']; ?></td>
             <td>
               <form action="admin_delete_user.php" method="POST" onsubmit="return confirm('Delete this user? This cannot be undone.');" style="margin:0;">
@@ -66,6 +73,29 @@ $requests = $conn->query("SELECT * FROM requests ORDER BY id DESC");
               <form action="admin_delete_request.php" method="POST" onsubmit="return confirm('Delete this request?');" style="margin:0;">
                 <input type="hidden" name="id" value="<?php echo $r['id']; ?>">
                 <button type="submit" class="admin-delete-btn">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <?php } ?>
+      </table>
+    </div>
+
+    <h2 style="color:#14323b; margin:30px 0 16px;">Reports (<?php echo $reports->num_rows; ?>)</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <tr><th>ID</th><th>Reporter</th><th>Target</th><th>Reason</th><th>Details</th><th>Date</th><th>Action</th></tr>
+        <?php while ($rp = $reports->fetch_assoc()) { ?>
+          <tr>
+            <td><?php echo $rp['id']; ?></td>
+            <td><?php echo htmlspecialchars($rp['reporter_name']); ?></td>
+            <td><?php echo htmlspecialchars($rp['target_name']); ?></td>
+            <td><?php echo htmlspecialchars($rp['reason']); ?></td>
+            <td><?php echo htmlspecialchars($rp['details']); ?></td>
+            <td><?php echo $rp['created_at']; ?></td>
+            <td>
+              <form action="admin_delete_report.php" method="POST" onsubmit="return confirm('Dismiss this report?');" style="margin:0;">
+                <input type="hidden" name="id" value="<?php echo $rp['id']; ?>">
+                <button type="submit" class="admin-delete-btn">Dismiss</button>
               </form>
             </td>
           </tr>

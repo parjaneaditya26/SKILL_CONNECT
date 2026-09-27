@@ -1,25 +1,30 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
 
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  $name = trim($_POST['name']);
-  $password = $_POST['password'];
-
-  $result = $conn->query("SELECT * FROM users WHERE name = '" . $conn->real_escape_string($name) . "'");
-  if ($result->num_rows > 0) {
-    $user = $result->fetch_assoc();
-    if (password_verify($password, $user['password'])) {
-      $_SESSION['profileName'] = $name;
-      header("Location: browse.php");
-      exit;
-    } else {
-      $error = "Incorrect password.";
-    }
+  if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+    $error = "Security check failed. Please try again.";
   } else {
-    $error = "No profile found with that name.";
+    $name = trim($_POST['name']);
+    $password = $_POST['password'];
+
+    $result = $conn->query("SELECT * FROM users WHERE name = '" . $conn->real_escape_string($name) . "'");
+    if ($result->num_rows > 0) {
+      $user = $result->fetch_assoc();
+      if (password_verify($password, $user['password'])) {
+        $_SESSION['profileName'] = $name;
+        header("Location: browse.php");
+        exit;
+      } else {
+        $error = "Incorrect password.";
+      }
+    } else {
+      $error = "No profile found with that name.";
+    }
   }
 }
 ?>
@@ -45,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       <p style="color:#c1272d; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
     <?php } ?>
     <form action="login.php" method="POST">
+      <?php echo csrf_field(); ?>
       <div class="form-group">
         <label for="name">Your Name</label>
         <input type="text" id="name" name="name" required>
@@ -65,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       New here? <a href="profile.php" style="color:#1d4ed8; font-weight:600;">Create a profile</a>
     </p>
   </main>
+  <script src="script.js"></script>
   <footer>
     <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
   </footer>

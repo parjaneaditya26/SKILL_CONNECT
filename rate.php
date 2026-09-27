@@ -24,6 +24,7 @@ $currentUser = $_SESSION['profileName'];
     <a href="profile.php">My Profile</a>
     <a href="browse.php">Browse Skills</a>
     <a href="requests.php">My Requests</a>
+    <a href="connections.php">My Connections</a>
     <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
   </nav>
   <header>

@@ -1,5 +1,7 @@
 <?php
+session_start();
 include 'db_connect.php';
+include 'helpers.php';
 
 $token = isset($_GET['token']) ? $_GET['token'] : (isset($_POST['token']) ? $_POST['token'] : "");
 $error = "";
@@ -13,13 +15,17 @@ if ($t == "" || $result->num_rows == 0) {
 } else {
   $user = $result->fetch_assoc();
   if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['new_password'])) {
-    $newPass = $_POST['new_password'];
-    if (strlen($newPass) < 6) {
-      $error = "Password must be at least 6 characters.";
+    if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+      $error = "Security check failed. Please try again.";
     } else {
-      $hashed = password_hash($newPass, PASSWORD_DEFAULT);
-      $conn->query("UPDATE users SET password='$hashed', reset_token=NULL, reset_expires=NULL WHERE id={$user['id']}");
-      $success = true;
+      $newPass = $_POST['new_password'];
+      if (strlen($newPass) < 6) {
+        $error = "Password must be at least 6 characters.";
+      } else {
+        $hashed = password_hash($newPass, PASSWORD_DEFAULT);
+        $conn->query("UPDATE users SET password='$hashed', reset_token=NULL, reset_expires=NULL WHERE id={$user['id']}");
+        $success = true;
+      }
     }
   }
 }
@@ -48,6 +54,7 @@ if ($t == "" || $result->num_rows == 0) {
       <p style="text-align:center;"><a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none;">Go to Login</a></p>
     <?php } else { ?>
       <form action="reset_password.php" method="POST">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
         <div class="form-group">
           <label for="new_password">New Password</label>
