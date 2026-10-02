@@ -3,7 +3,7 @@ session_start();
 $error = "";
 
 $ADMIN_USERNAME = "admin";
-$ADMIN_PASSWORD = "skillconnect2026"; // CHANGE THIS to your own secret password
+$ADMIN_PASSWORD = "skillconnect2026"; // change this to your own secret password
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   if ($_POST['username'] == $ADMIN_USERNAME && $_POST['password'] == $ADMIN_PASSWORD) {
@@ -23,14 +23,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-user="">
-  <nav><a href="index.php">Home</a></nav>
+  <nav>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+    </div>
+  </nav>
   <header>
     <h1>Admin Login</h1>
     <p>Restricted area.</p>
   </header>
   <main>
     <?php if ($error) { ?>
-      <p style="color:#c1272d; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+      <p style="color:#dc2626; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
     <?php } ?>
     <form action="admin_login.php" method="POST">
       <div class="form-group">
@@ -47,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       <button type="submit">Log In</button>
     </form>
   </main>
-  <footer><p>Skill Connect &copy; 2026</p></footer>
+  <footer><p>Skill Connect &copy; 2026 — MIT CSN</p></footer>
   <script src="script.js"></script>
 </body>
 </html>

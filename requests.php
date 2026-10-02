@@ -14,9 +14,15 @@ if (!isset($_SESSION['profileName'])) {
   </head>
   <body data-user="">
     <nav>
-      <a href="index.php">Home</a>
-      <a href="profile.php">Create Profile</a>
-      <a href="login.php">Login</a>
+      <a href="index.php" class="logo-link">
+        <span class="logo-badge">SC</span>
+        <span class="logo-text">Skill<strong>Connect</strong></span>
+      </a>
+      <div class="nav-links">
+        <a href="index.php" class="nav-link">Home</a>
+        <a href="profile.php" class="nav-link">Create Profile</a>
+        <a href="login.php" class="nav-link">Login</a>
+      </div>
     </nav>
     <header>
       <h1>My Requests</h1>
@@ -30,7 +36,7 @@ if (!isset($_SESSION['profileName'])) {
       </div>
     </main>
     <footer>
-      <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+      <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
     </footer>
   </body>
   </html>
@@ -60,12 +66,18 @@ $result = $conn->query($sql);
 <body data-user="<?php echo htmlspecialchars($currentUser); ?>">
 
   <nav>
-    <a href="index.php">Home</a>
-    <a href="profile.php">My Profile</a>
-    <a href="browse.php">Browse Skills</a>
-    <a href="requests.php">My Requests</a>
-    <a href="connections.php">My Connections</a>
-    <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <a href="profile.php" class="nav-link">My Profile</a>
+      <a href="browse.php" class="nav-link">Browse Skills</a>
+      <a href="requests.php" class="nav-link">My Requests</a>
+      <a href="connections.php" class="nav-link">My Connections</a>
+      <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
+    </div>
   </nav>
 
   <header>
@@ -105,7 +117,7 @@ $result = $conn->query($sql);
             <?php } else { ?>
               <p>You sent a request to connect.</p>
             <?php } ?>
-            <p style="font-size: 0.85rem; color: #777;"><?php echo timeAgo($row['created_at']); ?></p>
+            <p style="font-size: 0.85rem; color: #64748b;"><?php echo timeAgo($row['created_at']); ?></p>
 
             <?php if ($row['status'] == "accepted" && $otherMobile) { ?>
               <p><strong>Contact:</strong> <?php echo htmlspecialchars($otherMobile); ?></p>
@@ -136,7 +148,7 @@ $result = $conn->query($sql);
   </main>
 
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
     <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
   </footer>
 

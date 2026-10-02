@@ -52,9 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body data-user="">
   <nav>
-    <a href="index.php">Home</a>
-    <a href="profile.php">Create Profile</a>
-    <a href="login.php">Login</a>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <a href="profile.php" class="nav-link">Create Profile</a>
+      <a href="login.php" class="nav-link">Login</a>
+    </div>
   </nav>
   <header>
     <h1>Forgot Password</h1>
@@ -62,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </header>
   <main>
     <?php if ($message) { ?>
-      <p style="text-align:center; margin-bottom:16px; font-weight:600; color:#1d4ed8;"><?php echo htmlspecialchars($message); ?></p>
+      <p style="text-align:center; margin-bottom:16px; font-weight:600; color:#0d9488;"><?php echo htmlspecialchars($message); ?></p>
     <?php } ?>
     <form action="forgot_password.php" method="POST">
       <?php echo csrf_field(); ?>
@@ -73,11 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       <button type="submit">Send Reset Link</button>
     </form>
     <p style="text-align:center; margin-top:16px; font-size:0.9rem;">
-      <a href="login.php" style="color:#1d4ed8; font-weight:600;">Back to Login</a>
+      <a href="login.php" style="color:#0d9488; font-weight:600;">Back to Login</a>
     </p>
   </main>
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
   </footer>
 </body>
 </html>

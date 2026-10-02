@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
 
 $id = intval($_GET['id']);
 $currentUser = isset($_SESSION['profileName']) ? $_SESSION['profileName'] : "";
@@ -36,35 +37,44 @@ $ratingCount = $avgRow['total'];
 </head>
 <body data-user="<?php echo htmlspecialchars($currentUser); ?>">
   <nav>
-    <a href="index.php">Home</a>
-    <?php if ($currentUser) { ?>
-      <a href="profile.php">My Profile</a>
-      <a href="browse.php">Browse Skills</a>
-      <a href="requests.php">My Requests</a>
-      <a href="connections.php">My Connections</a>
-      <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
-    <?php } else { ?>
-      <a href="profile.php">Create Profile</a>
-      <a href="login.php">Login</a>
-    <?php } ?>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <?php if ($currentUser) { ?>
+        <a href="profile.php" class="nav-link">My Profile</a>
+        <a href="browse.php" class="nav-link">Browse Skills</a>
+        <a href="requests.php" class="nav-link">My Requests</a>
+        <a href="connections.php" class="nav-link">My Connections</a>
+        <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
+      <?php } else { ?>
+        <a href="profile.php" class="nav-link">Create Profile</a>
+        <a href="login.php" class="nav-link">Login</a>
+      <?php } ?>
+    </div>
   </nav>
 
   <header>
-    <h1><?php echo htmlspecialchars($user['name']); ?> <?php if ($user['verified']) { ?><span style="font-size:1.2rem;">✓</span><?php } ?></h1>
-    <p><?php echo htmlspecialchars($user['category']); ?></p>
+    <h1><?php echo htmlspecialchars($user['name']); ?> <?php if ($user['verified']) { ?><span style="font-size:1.1rem;">✓</span><?php } ?></h1>
+    <p><?php echo htmlspecialchars($user['branch']); ?> · <?php echo htmlspecialchars($user['year_of_study']); ?></p>
   </header>
 
   <main>
     <div class="skill-card" style="margin: 0 auto 10px; max-width: 350px;">
       <div class="avatar"><?php echo strtoupper(substr($user['name'], 0, 1)); ?></div>
-      <span class="category-tag"><?php echo htmlspecialchars($user['category']); ?></span>
+      <span class="category-tag"><?php echo htmlspecialchars($user['branch']); ?></span>
+      <span class="category-tag"><?php echo htmlspecialchars($user['year_of_study']); ?></span>
       <?php if ($avgRating) { ?>
         <p class="rating-display">⭐ <?php echo $avgRating; ?> (<?php echo $ratingCount; ?> reviews)</p>
       <?php } else { ?>
         <p class="rating-display no-rating">No ratings yet</p>
       <?php } ?>
-      <p><strong>Can teach:</strong> <?php echo htmlspecialchars($user['teach_skill']); ?></p>
-      <p><strong>Wants to learn:</strong> <?php echo htmlspecialchars($user['learn_skill']); ?></p>
+      <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Can teach:</p>
+      <div class="skill-tags-row"><?php echo skillTags($user['teach_skill']); ?></div>
+      <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Wants to learn:</p>
+      <div class="skill-tags-row"><?php echo skillTags($user['learn_skill']); ?></div>
       <?php if ($showContact) { ?>
         <p><strong>Contact:</strong> <?php echo htmlspecialchars($user['mobile']); ?></p>
       <?php } else { ?>
@@ -74,21 +84,21 @@ $ratingCount = $avgRow['total'];
 
     <?php if ($currentUser && $currentUser != $user['name']) { ?>
       <p style="text-align:center; margin-bottom:30px;">
-        <a href="report_user.php?id=<?php echo $user['id']; ?>&name=<?php echo urlencode($user['name']); ?>" style="color:#999; font-size:0.85rem;">Report this profile</a>
+        <a href="report_user.php?id=<?php echo $user['id']; ?>&name=<?php echo urlencode($user['name']); ?>" style="color:#94a3b8; font-size:0.82rem;">Report this profile</a>
       </p>
     <?php } ?>
 
-    <h2 style="color:#14323b; margin-bottom:20px;">Reviews (<?php echo $ratingCount; ?>)</h2>
+    <h2 style="color:#0f172a; margin-bottom:18px; font-size:1.3rem;">Reviews (<?php echo $ratingCount; ?>)</h2>
     <div class="skill-list">
       <?php if ($ratings->num_rows > 0) { ?>
         <?php while ($r = $ratings->fetch_assoc()) { ?>
           <div class="skill-card">
             <p class="rating-display">⭐ <?php echo $r['rating']; ?>/5</p>
-            <h3 style="font-size:1rem;"><?php echo htmlspecialchars($r['rater_name']); ?></h3>
+            <h3 style="font-size:0.98rem;"><?php echo htmlspecialchars($r['rater_name']); ?></h3>
             <?php if ($r['comment']) { ?>
               <p>"<?php echo htmlspecialchars($r['comment']); ?>"</p>
             <?php } ?>
-            <p style="font-size:0.8rem; color:#999;"><?php echo $r['created_at']; ?></p>
+            <p style="font-size:0.78rem; color:#94a3b8;"><?php echo $r['created_at']; ?></p>
           </div>
         <?php } ?>
       <?php } else { ?>
@@ -101,7 +111,7 @@ $ratingCount = $avgRow['total'];
   </main>
 
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
   </footer>
   <script src="script.js"></script>
 </body>

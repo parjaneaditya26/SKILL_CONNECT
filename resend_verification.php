@@ -18,14 +18,14 @@ if ($user['verified'] == 1) {
   exit;
 }
 
-$token = bin2hex(random_bytes(16));
-$t = $conn->real_escape_string($token);
-$conn->query("UPDATE users SET verify_token = '$t' WHERE id = {$user['id']}");
+$otp = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+$o = $conn->real_escape_string($otp);
+$conn->query("UPDATE users SET verify_otp = '$o', verify_otp_expires = DATE_ADD(NOW(), INTERVAL 10 MINUTE) WHERE id = {$user['id']}");
 
 if (function_exists('sendEmail')) {
-  $verifyLink = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/verify_email.php?token=$token";
-  sendEmail($user['email'], $user['name'], "Verify Your Skill Connect Email", "<p>Hi " . htmlspecialchars($user['name']) . ",</p><p>Click below to verify your email:</p><p><a href='$verifyLink'>Verify Email</a></p>");
+  sendEmail($user['email'], $user['name'], "Your Skill Connect Verification Code", "<p>Hi " . htmlspecialchars($user['name']) . ",</p><p>Your new verification code is:</p><h2 style='letter-spacing:4px;'>$otp</h2><p>This code expires in 10 minutes.</p>");
 }
 
-echo "<p>Verification email sent! Check your inbox.</p><a href='profile.php'>Back to Profile</a>";
+echo "<p>A new verification code has been sent! Check your inbox.</p>";
+echo "<a href='verify_otp.php?email=" . urlencode($user['email']) . "' class='connectBtn' style='display:inline-block; text-decoration:none; margin-top:10px;'>Enter Code</a>";
 ?>

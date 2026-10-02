@@ -8,16 +8,10 @@ $memberCount = 0;
 $connectionCount = 0;
 
 $result1 = $conn->query("SELECT COUNT(*) AS total FROM users");
-if ($result1) {
-  $row1 = $result1->fetch_assoc();
-  $memberCount = $row1['total'];
-}
+if ($result1) { $row1 = $result1->fetch_assoc(); $memberCount = $row1['total']; }
 
 $result2 = $conn->query("SELECT COUNT(*) AS total FROM requests WHERE status = 'accepted'");
-if ($result2) {
-  $row2 = $result2->fetch_assoc();
-  $connectionCount = $row2['total'];
-}
+if ($result2) { $row2 = $result2->fetch_assoc(); $connectionCount = $row2['total']; }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,22 +23,28 @@ if ($result2) {
 <body data-user="<?php echo $loggedIn ? htmlspecialchars($_SESSION['profileName']) : ''; ?>">
 
   <nav>
-    <a href="index.php">Home</a>
-    <?php if ($loggedIn) { ?>
-      <a href="profile.php">My Profile</a>
-      <a href="browse.php">Browse Skills</a>
-      <a href="requests.php">My Requests</a>
-      <a href="connections.php">My Connections</a>
-      <a href="logout.php">Logout (<?php echo htmlspecialchars($_SESSION['profileName']); ?>)</a>
-    <?php } else { ?>
-      <a href="profile.php">Create Profile</a>
-      <a href="login.php">Login</a>
-    <?php } ?>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <?php if ($loggedIn) { ?>
+        <a href="profile.php" class="nav-link">My Profile</a>
+        <a href="browse.php" class="nav-link">Browse Skills</a>
+        <a href="requests.php" class="nav-link">My Requests</a>
+        <a href="connections.php" class="nav-link">My Connections</a>
+        <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($_SESSION['profileName']); ?>)</a>
+      <?php } else { ?>
+        <a href="profile.php" class="nav-link">Create Profile</a>
+        <a href="login.php" class="nav-link">Login</a>
+      <?php } ?>
+    </div>
   </nav>
 
   <header>
     <h1>Skill Connect</h1>
-    <p>Learn a skill. Teach a skill. Connect with people.</p>
+    <p>Learn a skill. Teach a skill. Connect with people at MIT CSN.</p>
     <br>
     <button id="getStartedBtn">Get Started</button>
   </header>
@@ -66,12 +66,12 @@ if ($result2) {
       <div class="step">
         <div class="step-number">1</div>
         <h3>Create Your Profile</h3>
-        <p>Tell us what skill you can teach and what you want to learn.</p>
+        <p>Tell us what skills you can teach and what you want to learn.</p>
       </div>
       <div class="step">
         <div class="step-number">2</div>
         <h3>Browse & Search</h3>
-        <p>Find people whose skills match what you're looking for.</p>
+        <p>Find classmates whose skills match what you're looking for.</p>
       </div>
       <div class="step">
         <div class="step-number">3</div>
@@ -83,7 +83,7 @@ if ($result2) {
 
   <script src="script.js"></script>
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
     <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
   </footer>
 </body>

@@ -23,12 +23,18 @@ $result = $conn->query("SELECT * FROM requests WHERE status = 'accepted' AND (re
 </head>
 <body data-user="<?php echo htmlspecialchars($currentUser); ?>">
   <nav>
-    <a href="index.php">Home</a>
-    <a href="profile.php">My Profile</a>
-    <a href="browse.php">Browse Skills</a>
-    <a href="requests.php">My Requests</a>
-    <a href="connections.php">My Connections</a>
-    <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <a href="profile.php" class="nav-link">My Profile</a>
+      <a href="browse.php" class="nav-link">Browse Skills</a>
+      <a href="requests.php" class="nav-link">My Requests</a>
+      <a href="connections.php" class="nav-link">My Connections</a>
+      <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
+    </div>
   </nav>
   <header>
     <h1>My Connections</h1>
@@ -47,9 +53,10 @@ $result = $conn->query("SELECT * FROM requests WHERE status = 'accepted' AND (re
           ?>
           <div class="skill-card">
             <div class="avatar"><?php echo strtoupper(substr($otherName, 0, 1)); ?></div>
-            <span class="category-tag"><?php echo htmlspecialchars($ou['category']); ?></span>
+            <span class="category-tag"><?php echo htmlspecialchars($ou['branch']); ?></span>
             <h3><?php echo htmlspecialchars($otherName); ?></h3>
-            <p><strong>Can teach:</strong> <?php echo htmlspecialchars($ou['teach_skill']); ?></p>
+            <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Can teach:</p>
+            <div class="skill-tags-row"><?php echo skillTags($ou['teach_skill']); ?></div>
             <p><strong>Contact:</strong> <?php echo htmlspecialchars($ou['mobile']); ?></p>
             <a href="messages.php?with=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:10px;">Message</a>
             <a href="rate.php?id=<?php echo $ou['id']; ?>&name=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;">Rate</a>
@@ -66,7 +73,7 @@ $result = $conn->query("SELECT * FROM requests WHERE status = 'accepted' AND (re
     </div>
   </main>
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
   </footer>
   <script src="script.js"></script>
 </body>

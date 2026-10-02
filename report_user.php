@@ -1,5 +1,4 @@
 <?php
-// report_user.php
 session_start();
 include 'db_connect.php';
 include 'helpers.php';
@@ -22,9 +21,15 @@ $csrf = csrf_token();
 </head>
 <body data-user="<?php echo htmlspecialchars($_SESSION['profileName']); ?>">
   <nav>
-    <a href="index.php">Home</a>
-    <a href="profile.php">My Profile</a>
-    <a href="browse.php">Browse Skills</a>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <a href="profile.php" class="nav-link">My Profile</a>
+      <a href="browse.php" class="nav-link">Browse Skills</a>
+    </div>
   </nav>
   <header>
     <h1>Report <?php echo htmlspecialchars($target_name); ?></h1>
@@ -52,7 +57,7 @@ $csrf = csrf_token();
     </form>
   </main>
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
   </footer>
 </body>
 </html>

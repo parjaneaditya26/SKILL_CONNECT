@@ -24,4 +24,31 @@ function csrf_field() {
 function csrf_verify($token) {
   return isset($_SESSION['csrf_token']) && !empty($token) && hash_equals($_SESSION['csrf_token'], $token);
 }
+function skillTags($skillsStr) {
+  if (!$skillsStr || $skillsStr == "Nothing yet") {
+    return '<span class="skill-tag skill-tag-empty">Nothing yet</span>';
+  }
+  $skills = array_map('trim', explode(',', $skillsStr));
+  $html = '';
+  foreach ($skills as $s) {
+    if ($s != '') {
+      $html .= '<span class="skill-tag">' . htmlspecialchars($s) . '</span>';
+    }
+  }
+  return $html;
+}
+
+function skillsMatch($mySkillsStr, $theirSkillsStr) {
+  if (!$mySkillsStr || !$theirSkillsStr) { return false; }
+  $mySkills = array_map('trim', explode(',', strtolower($mySkillsStr)));
+  $theirSkills = array_map('trim', explode(',', strtolower($theirSkillsStr)));
+  foreach ($mySkills as $m) {
+    foreach ($theirSkills as $t) {
+      if ($m != '' && $t != '' && (stripos($t, $m) !== false || stripos($m, $t) !== false)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 ?>

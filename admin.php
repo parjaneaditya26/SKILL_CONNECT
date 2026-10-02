@@ -19,8 +19,14 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
 </head>
 <body data-user="">
   <nav>
-    <a href="index.php">Home</a>
-    <a href="admin_logout.php">Admin Logout</a>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <a href="admin_logout.php" class="nav-link">Admin Logout</a>
+    </div>
   </nav>
   <header>
     <h1>Admin Dashboard</h1>
@@ -28,23 +34,24 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
   </header>
   <main style="max-width: 1100px; margin: 0 auto; text-align: left;">
     <p style="text-align:center; margin-bottom:20px;">
-      <a href="export_users.php" style="color:#1d4ed8; font-weight:600; margin-right:20px;">⬇ Export Users (CSV)</a>
-      <a href="export_requests.php" style="color:#1d4ed8; font-weight:600;">⬇ Export Requests (CSV)</a>
+      <a href="export_users.php" style="color:#0d9488; font-weight:600; margin-right:20px;">⬇ Export Users (CSV)</a>
+      <a href="export_requests.php" style="color:#0d9488; font-weight:600;">⬇ Export Requests (CSV)</a>
     </p>
 
-    <h2 style="color:#14323b; margin-bottom:16px;">All Users (<?php echo $users->num_rows; ?>)</h2>
+    <h2 style="color:#0f172a; margin-bottom:16px;">All Users (<?php echo $users->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
-        <tr><th>ID</th><th>Name</th><th>Email</th><th>Mobile</th><th>Teaches</th><th>Wants to Learn</th><th>Category</th><th>Verified</th><th>Joined</th><th>Action</th></tr>
+        <tr><th>ID</th><th>Name</th><th>Email</th><th>Mobile</th><th>Branch</th><th>Year</th><th>Teaches</th><th>Wants to Learn</th><th>Verified</th><th>Joined</th><th>Action</th></tr>
         <?php while ($u = $users->fetch_assoc()) { ?>
           <tr>
             <td><?php echo $u['id']; ?></td>
             <td><?php echo htmlspecialchars($u['name']); ?></td>
             <td><?php echo htmlspecialchars($u['email']); ?></td>
             <td><?php echo htmlspecialchars($u['mobile']); ?></td>
+            <td><?php echo htmlspecialchars($u['branch']); ?></td>
+            <td><?php echo htmlspecialchars($u['year_of_study']); ?></td>
             <td><?php echo htmlspecialchars($u['teach_skill']); ?></td>
             <td><?php echo htmlspecialchars($u['learn_skill']); ?></td>
-            <td><?php echo htmlspecialchars($u['category']); ?></td>
             <td><?php echo $u['verified'] ? 'Yes' : 'No'; ?></td>
             <td><?php echo $u['created_at']; ?></td>
             <td>
@@ -58,7 +65,7 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
       </table>
     </div>
 
-    <h2 style="color:#14323b; margin:30px 0 16px;">All Requests (<?php echo $requests->num_rows; ?>)</h2>
+    <h2 style="color:#0f172a; margin:30px 0 16px;">All Requests (<?php echo $requests->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
         <tr><th>ID</th><th>From</th><th>To</th><th>Status</th><th>Date</th><th>Action</th></tr>
@@ -80,7 +87,7 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
       </table>
     </div>
 
-    <h2 style="color:#14323b; margin:30px 0 16px;">Reports (<?php echo $reports->num_rows; ?>)</h2>
+    <h2 style="color:#0f172a; margin:30px 0 16px;">Reports (<?php echo $reports->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
         <tr><th>ID</th><th>Reporter</th><th>Target</th><th>Reason</th><th>Details</th><th>Date</th><th>Action</th></tr>
@@ -104,7 +111,7 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
     </div>
   </main>
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
   </footer>
 </body>
 </html>

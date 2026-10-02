@@ -1,5 +1,4 @@
 <?php
-// disconnect.php
 session_start();
 include 'db_connect.php';
 include 'helpers.php';
@@ -24,7 +23,12 @@ if ($check->num_rows == 0) {
   echo "You are not authorized to disconnect this request.";
   exit;
 }
+$check_row = $check->fetch_assoc();
 
+$otherName = ($check_row['requester_name'] == $_SESSION['profileName']) ? $check_row['target_name'] : $check_row['requester_name'];
+$on = $conn->real_escape_string($otherName);
+
+$conn->query("DELETE FROM messages WHERE (sender_name = '$currentUser' AND receiver_name = '$on') OR (sender_name = '$on' AND receiver_name = '$currentUser')");
 $conn->query("DELETE FROM requests WHERE id = $id");
 
 header("Location: requests.php?view=" . $view);

@@ -4,16 +4,16 @@ include 'db_connect.php';
 include 'helpers.php';
 
 $search = isset($_GET['search']) ? $_GET['search'] : "";
-$category = isset($_GET['category']) ? $_GET['category'] : "";
+$branch = isset($_GET['branch']) ? $_GET['branch'] : "";
 
 $sql = "SELECT * FROM users WHERE 1=1";
 if ($search != "") {
   $s = $conn->real_escape_string($search);
   $sql .= " AND (teach_skill LIKE '%$s%' OR learn_skill LIKE '%$s%' OR name LIKE '%$s%')";
 }
-if ($category != "") {
-  $c = $conn->real_escape_string($category);
-  $sql .= " AND category = '$c'";
+if ($branch != "") {
+  $b = $conn->real_escape_string($branch);
+  $sql .= " AND branch = '$b'";
 }
 
 $result = $conn->query($sql);
@@ -29,9 +29,15 @@ if (!isset($_SESSION['profileName'])) {
   </head>
   <body data-user="">
     <nav>
-      <a href="index.php">Home</a>
-      <a href="profile.php">Create Profile</a>
-      <a href="login.php">Login</a>
+      <a href="index.php" class="logo-link">
+        <span class="logo-badge">SC</span>
+        <span class="logo-text">Skill<strong>Connect</strong></span>
+      </a>
+      <div class="nav-links">
+        <a href="index.php" class="nav-link">Home</a>
+        <a href="profile.php" class="nav-link">Create Profile</a>
+        <a href="login.php" class="nav-link">Login</a>
+      </div>
     </nav>
     <header>
       <h1>Create a Profile First</h1>
@@ -45,7 +51,7 @@ if (!isset($_SESSION['profileName'])) {
       </div>
     </main>
     <footer>
-      <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+      <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
     </footer>
   </body>
   </html>
@@ -57,6 +63,7 @@ $myTeach = isset($_GET['my_teach']) ? $_GET['my_teach'] : "";
 $myLearn = isset($_GET['my_learn']) ? $_GET['my_learn'] : "";
 $currentUser = $_SESSION['profileName'];
 $csrf = csrf_token();
+$branches = ["Computer Engineering","Information Technology","Mechanical Engineering","Civil Engineering","Electronics & Telecommunication","Electrical Engineering","Other"];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -68,12 +75,18 @@ $csrf = csrf_token();
 <body data-user="<?php echo htmlspecialchars($currentUser); ?>">
 
   <nav>
-    <a href="index.php">Home</a>
-    <a href="profile.php">My Profile</a>
-    <a href="browse.php">Browse Skills</a>
-    <a href="requests.php">My Requests</a>
-    <a href="connections.php">My Connections</a>
-    <a href="logout.php">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <a href="profile.php" class="nav-link">My Profile</a>
+      <a href="browse.php" class="nav-link">Browse Skills</a>
+      <a href="requests.php" class="nav-link">My Requests</a>
+      <a href="connections.php" class="nav-link">My Connections</a>
+      <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
+    </div>
   </nav>
 
   <header>
@@ -84,23 +97,19 @@ $csrf = csrf_token();
   <main>
     <form class="search-form" action="browse.php" method="GET">
       <input type="text" name="search" placeholder="Search a skill or name..." value="<?php echo htmlspecialchars($search); ?>">
-      <select name="category" onchange="this.form.submit()">
-        <option value="">All Categories</option>
-        <option value="Music" <?php if ($category == "Music") echo "selected"; ?>>Music</option>
-        <option value="Tech" <?php if ($category == "Tech") echo "selected"; ?>>Tech</option>
-        <option value="Cooking" <?php if ($category == "Cooking") echo "selected"; ?>>Cooking</option>
-        <option value="Sports" <?php if ($category == "Sports") echo "selected"; ?>>Sports</option>
-        <option value="Language" <?php if ($category == "Language") echo "selected"; ?>>Language</option>
-        <option value="Art" <?php if ($category == "Art") echo "selected"; ?>>Art</option>
-        <option value="Other" <?php if ($category == "Other") echo "selected"; ?>>Other</option>
+      <select name="branch" onchange="this.form.submit()">
+        <option value="">All Branches</option>
+        <?php foreach ($branches as $b) { ?>
+          <option value="<?php echo $b; ?>" <?php if ($branch == $b) echo "selected"; ?>><?php echo $b; ?></option>
+        <?php } ?>
       </select>
       <button type="submit">Search</button>
     </form>
 
     <form class="match-form" action="browse.php" method="GET">
       <p>Find your perfect match:</p>
-      <input type="text" name="my_teach" placeholder="Skill you teach" value="<?php echo htmlspecialchars($myTeach); ?>">
-      <input type="text" name="my_learn" placeholder="Skill you want to learn" value="<?php echo htmlspecialchars($myLearn); ?>">
+      <input type="text" name="my_teach" placeholder="A skill you teach" value="<?php echo htmlspecialchars($myTeach); ?>">
+      <input type="text" name="my_learn" placeholder="A skill you want to learn" value="<?php echo htmlspecialchars($myLearn); ?>">
       <button type="submit">Find Matches</button>
     </form>
 
@@ -128,9 +137,7 @@ $csrf = csrf_token();
             $cu = $conn->real_escape_string($currentUser);
             $rn = $conn->real_escape_string($row['name']);
             $acceptedCheck = $conn->query("SELECT id FROM requests WHERE status = 'accepted' AND ((requester_name = '$cu' AND target_id = {$row['id']}) OR (requester_name = '$rn' AND target_name = '$cu'))");
-            if ($acceptedCheck->num_rows > 0) {
-              $showContact = true;
-            }
+            if ($acceptedCheck->num_rows > 0) { $showContact = true; }
 
             $statusCheck = $conn->query("SELECT status FROM requests WHERE (requester_name = '$cu' AND target_id = {$row['id']}) OR (requester_name = '$rn' AND target_name = '$cu') ORDER BY id DESC LIMIT 1");
             if ($statusCheck->num_rows > 0) {
@@ -142,18 +149,21 @@ $csrf = csrf_token();
           <div class="skill-card <?php echo $isMatch ? 'perfect-match' : ''; ?>">
             <?php if ($isMatch) { ?><span class="match-badge">✨ Perfect Match</span><?php } ?>
             <div class="avatar"><?php echo strtoupper(substr($row['name'], 0, 1)); ?></div>
-            <span class="category-tag"><?php echo htmlspecialchars($row['category']); ?></span>
+            <?php if ($row['branch']) { ?><span class="category-tag"><?php echo htmlspecialchars($row['branch']); ?></span><?php } ?>
+            <?php if ($row['year_of_study']) { ?><span class="category-tag"><?php echo htmlspecialchars($row['year_of_study']); ?></span><?php } ?>
             <h3>
               <a href="profile_view.php?id=<?php echo $row['id']; ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars($row['name']); ?></a>
-              <?php if ($row['verified']) { ?><span style="color:#1d4ed8; font-size:0.8rem; font-weight:600;"> ✓ Verified</span><?php } ?>
+              <?php if ($row['verified']) { ?><span style="color:#0d9488; font-size:0.78rem; font-weight:600;"> ✓ Verified</span><?php } ?>
             </h3>
             <?php if ($avgRating) { ?>
               <p class="rating-display">⭐ <?php echo $avgRating; ?> (<?php echo $ratingCount; ?> reviews)</p>
             <?php } else { ?>
               <p class="rating-display no-rating">No ratings yet</p>
             <?php } ?>
-            <p><strong>Can teach:</strong> <?php echo htmlspecialchars($row['teach_skill']); ?></p>
-            <p><strong>Wants to learn:</strong> <?php echo htmlspecialchars($row['learn_skill']); ?></p>
+            <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Can teach:</p>
+            <div class="skill-tags-row"><?php echo skillTags($row['teach_skill']); ?></div>
+            <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Wants to learn:</p>
+            <div class="skill-tags-row"><?php echo skillTags($row['learn_skill']); ?></div>
             <?php if ($showContact) { ?>
               <p><strong>Contact:</strong> <?php echo htmlspecialchars($row['mobile']); ?></p>
             <?php } else { ?>
@@ -161,7 +171,7 @@ $csrf = csrf_token();
             <?php } ?>
 
             <?php if ($row['name'] == $currentUser) { ?>
-              <p style="text-align:center; font-weight:600; color:#1d4ed8; margin-top:10px;">This is your profile</p>
+              <p style="text-align:center; font-weight:600; color:#0d9488; margin-top:10px;">This is your profile</p>
             <?php } elseif ($myRequestStatus == 'pending') { ?>
               <p class="status-label status-pending">Request Pending</p>
             <?php } elseif ($myRequestStatus == 'accepted') { ?>
@@ -180,14 +190,14 @@ $csrf = csrf_token();
       <?php } else { ?>
         <div class="empty-state">
           <h3>No profiles found</h3>
-          <p><?php echo ($search != "" || $category != "") ? "Try a different search or category." : "Be the first to create a profile!"; ?></p>
+          <p><?php echo ($search != "" || $branch != "") ? "Try a different search or branch." : "Be the first to create a profile!"; ?></p>
         </div>
       <?php } ?>
     </div>
   </main>
 
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
     <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
   </footer>
 

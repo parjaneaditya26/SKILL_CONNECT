@@ -39,8 +39,14 @@ if ($t == "" || $result->num_rows == 0) {
 </head>
 <body data-user="">
   <nav>
-    <a href="index.php">Home</a>
-    <a href="login.php">Login</a>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <a href="login.php" class="nav-link">Login</a>
+    </div>
   </nav>
   <header>
     <h1>Reset Password</h1>
@@ -48,9 +54,9 @@ if ($t == "" || $result->num_rows == 0) {
   </header>
   <main>
     <?php if ($error) { ?>
-      <p style="color:#c1272d; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+      <p style="color:#dc2626; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
     <?php } elseif ($success) { ?>
-      <p style="color:#1d4ed8; text-align:center; margin-bottom:16px; font-weight:600;">Password updated! You can now log in.</p>
+      <p style="color:#0d9488; text-align:center; margin-bottom:16px; font-weight:600;">Password updated! You can now log in.</p>
       <p style="text-align:center;"><a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none;">Go to Login</a></p>
     <?php } else { ?>
       <form action="reset_password.php" method="POST">
@@ -68,7 +74,7 @@ if ($t == "" || $result->num_rows == 0) {
     <?php } ?>
   </main>
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
   </footer>
   <script src="script.js"></script>
 </body>

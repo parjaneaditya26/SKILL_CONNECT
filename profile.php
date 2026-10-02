@@ -16,6 +16,9 @@ if ($loggedIn) {
     $loggedIn = false;
   }
 }
+
+$branches = ["Computer Engineering","Information Technology","Mechanical Engineering","Civil Engineering","Electronics & Telecommunication","Electrical Engineering","Other"];
+$years = ["FY","SY","TY","Final Year"];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,17 +29,23 @@ if ($loggedIn) {
 </head>
 <body data-user="<?php echo $loggedIn ? htmlspecialchars($user['name']) : ''; ?>">
   <nav>
-    <a href="index.php">Home</a>
-    <?php if ($loggedIn) { ?>
-      <a href="profile.php">My Profile</a>
-      <a href="browse.php">Browse Skills</a>
-      <a href="requests.php">My Requests</a>
-      <a href="connections.php">My Connections</a>
-      <a href="logout.php">Logout (<?php echo htmlspecialchars($user['name']); ?>)</a>
-    <?php } else { ?>
-      <a href="profile.php">Create Profile</a>
-      <a href="login.php">Login</a>
-    <?php } ?>
+    <a href="index.php" class="logo-link">
+      <span class="logo-badge">SC</span>
+      <span class="logo-text">Skill<strong>Connect</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.php" class="nav-link">Home</a>
+      <?php if ($loggedIn) { ?>
+        <a href="profile.php" class="nav-link">My Profile</a>
+        <a href="browse.php" class="nav-link">Browse Skills</a>
+        <a href="requests.php" class="nav-link">My Requests</a>
+        <a href="connections.php" class="nav-link">My Connections</a>
+        <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($user['name']); ?>)</a>
+      <?php } else { ?>
+        <a href="profile.php" class="nav-link">Create Profile</a>
+        <a href="login.php" class="nav-link">Login</a>
+      <?php } ?>
+    </div>
   </nav>
 
   <header>
@@ -45,12 +54,13 @@ if ($loggedIn) {
   </header>
 
   <?php if ($loggedIn) { ?>
-    <div style="max-width:420px; margin: 0 auto 10px; text-align:center;">
+    <div style="max-width:420px; margin: 20px auto 0; text-align:center;">
       <?php if ($user['verified']) { ?>
-        <p style="color:#1d4ed8; font-weight:600; font-size:0.9rem;">✓ Email Verified</p>
+        <p style="color:#0f766e; font-weight:600; font-size:0.88rem;">✓ Email Verified</p>
       <?php } else { ?>
-        <p style="color:#b8860b; font-weight:600; font-size:0.9rem;">
-          Email not verified — <a href="resend_verification.php" style="color:#1d4ed8;">Resend verification email</a>
+        <p style="color:#b45309; font-weight:600; font-size:0.88rem;">
+          Email not verified —
+          <a href="resend_verification.php" style="color:#0d9488;">Verify Email</a>
         </p>
       <?php } ?>
     </div>
@@ -89,36 +99,43 @@ if ($loggedIn) {
         </div>
       </div>
       <div class="form-group">
-        <label for="teachSkill">Skill You Can Teach</label>
-        <input type="text" id="teachSkill" name="teachSkill"
-          value="<?php echo ($loggedIn && $user['teach_skill'] != 'Nothing yet') ? htmlspecialchars($user['teach_skill']) : ''; ?>"
-          placeholder="e.g. Guitar (optional)">
-      </div>
-      <div class="form-group">
-        <label for="category">Category</label>
-        <select id="category" name="category" required>
-          <option value="">-- Select a category --</option>
-          <?php
-          $cats = ["Music","Tech","Cooking","Sports","Language","Art","Other"];
-          foreach ($cats as $c) {
-            $sel = ($loggedIn && $user['category'] == $c) ? "selected" : "";
-            echo "<option value=\"$c\" $sel>$c</option>";
-          }
-          ?>
+        <label for="branch">Branch</label>
+        <select id="branch" name="branch" required>
+          <option value="">-- Select your branch --</option>
+          <?php foreach ($branches as $b) {
+            $sel = ($loggedIn && $user['branch'] == $b) ? "selected" : "";
+            echo "<option value=\"$b\" $sel>$b</option>";
+          } ?>
         </select>
       </div>
       <div class="form-group">
-        <label for="learnSkill">Skill You Want to Learn</label>
+        <label for="year_of_study">Year of Study</label>
+        <select id="year_of_study" name="year_of_study" required>
+          <option value="">-- Select your year --</option>
+          <?php foreach ($years as $y) {
+            $sel = ($loggedIn && $user['year_of_study'] == $y) ? "selected" : "";
+            echo "<option value=\"$y\" $sel>$y</option>";
+          } ?>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="teachSkill">Skills You Can Teach</label>
+        <input type="text" id="teachSkill" name="teachSkill"
+          value="<?php echo ($loggedIn && $user['teach_skill'] != 'Nothing yet') ? htmlspecialchars($user['teach_skill']) : ''; ?>"
+          placeholder="e.g. Guitar, Piano, Singing (comma-separated, optional)">
+      </div>
+      <div class="form-group">
+        <label for="learnSkill">Skills You Want to Learn</label>
         <input type="text" id="learnSkill" name="learnSkill"
           value="<?php echo ($loggedIn && $user['learn_skill'] != 'Nothing yet') ? htmlspecialchars($user['learn_skill']) : ''; ?>"
-          placeholder="e.g. Photography (optional)">
+          placeholder="e.g. Photography, Cooking (comma-separated, optional)">
       </div>
       <button type="submit"><?php echo $loggedIn ? "Save Changes" : "Create Profile"; ?></button>
     </form>
 
     <?php if (!$loggedIn) { ?>
-      <p style="text-align:center; margin-top:16px; font-size:0.9rem; color:#666;">
-        Already have a profile? <a href="login.php" style="color:#1d4ed8; font-weight:600;">Log in</a>
+      <p style="text-align:center; margin-top:16px; font-size:0.9rem; color:#64748b;">
+        Already have a profile? <a href="login.php" style="color:#0d9488; font-weight:600;">Log in</a>
       </p>
     <?php } ?>
 
@@ -140,7 +157,7 @@ if ($loggedIn) {
 
   <script src="script.js"></script>
   <footer>
-    <p>Skill Connect &copy; 2026 — A College Project (CEP)</p>
+    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
     <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
   </footer>
 </body>
