@@ -36,3 +36,56 @@ document.querySelectorAll(".toggle-password").forEach(function (btn) {
     }
   });
 });
+const chatToggle = document.getElementById("chatbot-toggle");
+const chatWindow = document.getElementById("chatbot-window");
+const chatInput = document.getElementById("chatbot-input");
+const chatSend = document.getElementById("chatbot-send");
+const chatMessages = document.getElementById("chatbot-messages");
+
+if (chatToggle) {
+  chatToggle.addEventListener("click", function () {
+    chatWindow.classList.toggle("open");
+  });
+
+  function addMessage(text, sender) {
+    const msg = document.createElement("div");
+    msg.className = "chat-msg " + sender;
+    msg.textContent = text;
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function sendChatMessage() {
+    const text = chatInput.value.trim();
+    if (text === "") return;
+
+    addMessage(text, "user");
+    chatInput.value = "";
+
+    const loadingMsg = document.createElement("div");
+    loadingMsg.className = "chat-msg bot";
+    loadingMsg.textContent = "Typing...";
+    chatMessages.appendChild(loadingMsg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    fetch("chatbot.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "message=" + encodeURIComponent(text)
+    })
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        loadingMsg.remove();
+        addMessage(data.reply, "bot");
+      })
+      .catch(function () {
+        loadingMsg.remove();
+        addMessage("Sorry, something went wrong. Please try again.", "bot");
+      });
+  }
+
+  chatSend.addEventListener("click", sendChatMessage);
+  chatInput.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") sendChatMessage();
+  });
+}

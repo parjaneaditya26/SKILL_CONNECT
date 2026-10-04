@@ -80,7 +80,17 @@ if ($result2) { $row2 = $result2->fetch_assoc(); $connectionCount = $row2['total
       </div>
     </div>
   </div>
-
+  <div id="chatbot-window">
+    <div id="chatbot-header">💬 Skill Connect Assistant</div>
+    <div id="chatbot-messages">
+      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
+    </div>
+    <div id="chatbot-input-row">
+      <input type="text" id="chatbot-input" placeholder="Ask a question...">
+      <button id="chatbot-send" type="button">Send</button>
+    </div>
+  </div>
+  <button id="chatbot-toggle">💬</button>
   <script src="script.js"></script>
   <footer>
     <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
