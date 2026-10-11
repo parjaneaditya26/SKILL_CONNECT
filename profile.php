@@ -54,14 +54,22 @@ $years = ["FY","SY","TY","Final Year"];
   </header>
 
   <?php if ($loggedIn) { ?>
-    <div style="max-width:420px; margin: 20px auto 0; text-align:center;">
+    <div class="verify-wrap">
       <?php if ($user['verified']) { ?>
-        <p style="color:#0f766e; font-weight:600; font-size:0.88rem;">✓ Email Verified</p>
+        <p style="color:var(--accent-dark); font-weight:600; font-size:0.88rem;">✓ Email Verified</p>
       <?php } else { ?>
-        <p style="color:#b45309; font-weight:600; font-size:0.88rem;">
-          Email not verified —
-          <a href="resend_verification.php" style="color:#0d9488;">Verify Email</a>
-        </p>
+        <div class="empty-state" style="max-width:none; margin:0; padding:20px; text-align:left;">
+          <h3 style="color:#b45309; font-size:1rem;">Email not verified</h3>
+          <p>Step 1: we'll send a 6-digit code to <strong><?php echo htmlspecialchars($user['email']); ?></strong></p>
+          <form action="resend_verification.php" method="POST" class="ajax-form inline-form" data-no-reload="1" style="margin:8px 0 0;">
+            <button type="submit" style="width:100%;">Send verification code</button>
+          </form>
+          <p style="margin-top:16px;">Step 2: enter the code from your email</p>
+          <form action="verify_otp_ajax.php" method="POST" class="ajax-form inline-form" style="margin:8px 0 0;">
+            <input type="text" name="otp" maxlength="6" pattern="[0-9]{6}" placeholder="123456" required style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; font-size:1rem; letter-spacing:3px;">
+            <button type="submit" style="width:100%;">Verify</button>
+          </form>
+        </div>
       <?php } ?>
     </div>
   <?php } ?>
@@ -134,8 +142,8 @@ $years = ["FY","SY","TY","Final Year"];
     </form>
 
     <?php if (!$loggedIn) { ?>
-      <p style="text-align:center; margin-top:16px; font-size:0.9rem; color:#64748b;">
-        Already have a profile? <a href="login.php" style="color:#0d9488; font-weight:600;">Log in</a>
+      <p style="text-align:center; margin-top:16px; font-size:0.9rem; color:var(--text-muted);">
+        Already have a profile? <a href="login.php" style="color:var(--accent); font-weight:600;">Log in</a>
       </p>
     <?php } ?>
 
@@ -143,7 +151,7 @@ $years = ["FY","SY","TY","Final Year"];
       <div class="danger-zone">
         <h3>Delete Your Profile</h3>
         <p>Enter your password to permanently remove your profile. Only you can do this.</p>
-        <form action="delete_profile.php" method="POST" onsubmit="return confirm('Are you sure? This cannot be undone.');">
+        <form action="delete_profile.php" method="POST" class="ajax-form inline-form" onsubmit="return confirm('Are you sure? This cannot be undone.');">
           <?php echo csrf_field(); ?>
           <div class="password-wrap">
             <input type="password" id="deletePassword" name="password" placeholder="Your password" required>

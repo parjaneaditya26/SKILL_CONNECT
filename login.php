@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </header>
   <main>
     <?php if ($error) { ?>
-      <p style="color:#dc2626; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+      <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
     <?php } ?>
     <form action="login.php" method="POST">
       <?php echo csrf_field(); ?>
@@ -70,11 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       </div>
       <button type="submit">Log In</button>
     </form>
-    <p style="text-align:center; margin-top:16px; font-size:0.9rem; color:#64748b;">
-      <a href="forgot_password.php" style="color:#0d9488; font-weight:600;">Forgot password?</a>
+    <p style="text-align:center; margin-top:16px; font-size:0.9rem; color:var(--text-muted);">
+      <a href="forgot_password.php" style="color:var(--accent); font-weight:600;">Forgot password?</a>
     </p>
-    <p style="text-align:center; margin-top:8px; font-size:0.9rem; color:#64748b;">
-      New here? <a href="profile.php" style="color:#0d9488; font-weight:600;">Create a profile</a>
+    <p style="text-align:center; margin-top:8px; font-size:0.9rem; color:var(--text-muted);">
+      New here? <a href="profile.php" style="color:var(--accent); font-weight:600;">Create a profile</a>
     </p>
   </main>
   <div id="chatbot-window">

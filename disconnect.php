@@ -3,24 +3,25 @@ session_start();
 include 'db_connect.php';
 include 'helpers.php';
 
+header('Content-Type: application/json');
+
 if (!isset($_SESSION['profileName'])) {
-  header("Location: login.php");
+  echo json_encode(["success" => false, "message" => "You must be logged in."]);
   exit;
 }
 
-if (!csrf_verify($_GET['csrf'] ?? '')) {
-  echo "Security check failed.";
+if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+  echo json_encode(["success" => false, "message" => "Security check failed."]);
   exit;
 }
 
-$id = intval($_GET['id']);
+$id = intval($_POST['id']);
 $currentUser = $conn->real_escape_string($_SESSION['profileName']);
-$view = isset($_GET['view']) ? $_GET['view'] : 'received';
 
 $check = $conn->query("SELECT * FROM requests WHERE id = $id AND status = 'accepted' AND (requester_name = '$currentUser' OR target_name = '$currentUser')");
 
 if ($check->num_rows == 0) {
-  echo "You are not authorized to disconnect this request.";
+  echo json_encode(["success" => false, "message" => "Not authorized."]);
   exit;
 }
 $check_row = $check->fetch_assoc();
@@ -31,6 +32,6 @@ $on = $conn->real_escape_string($otherName);
 $conn->query("DELETE FROM messages WHERE (sender_name = '$currentUser' AND receiver_name = '$on') OR (sender_name = '$on' AND receiver_name = '$currentUser')");
 $conn->query("DELETE FROM requests WHERE id = $id");
 
-header("Location: requests.php?view=" . $view);
-exit;
+echo json_encode(["success" => true, "message" => "Disconnected."]);
+$conn->close();
 ?>

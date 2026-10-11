@@ -36,7 +36,7 @@ $csrf = csrf_token();
     <p>Let us know if something's wrong with this profile.</p>
   </header>
   <main>
-    <form action="save_report.php" method="POST">
+    <form action="save_report.php" method="POST" class="ajax-form">
       <?php echo csrf_field(); ?>
       <input type="hidden" name="target_id" value="<?php echo $target_id; ?>">
       <input type="hidden" name="target_name" value="<?php echo htmlspecialchars($target_name); ?>">

@@ -1,10 +1,12 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
+
+header('Content-Type: application/json');
 
 if (!isset($_SESSION['profileName'])) {
-  echo "<p>You must be logged in to delete a profile.</p>";
-  echo "<a href='login.php'>Log In</a>";
+  echo json_encode(["success" => false, "message" => "You must be logged in."]);
   exit;
 }
 
@@ -17,12 +19,9 @@ $user = $result->fetch_assoc();
 if ($user && password_verify($password, $user['password'])) {
   $conn->query("DELETE FROM users WHERE name = '" . $conn->real_escape_string($name) . "'");
   session_destroy();
-  echo "<p>Your profile has been deleted.</p>";
-  echo "<a href='index.php'>Back to Home</a>";
+  echo json_encode(["success" => true, "message" => "Profile deleted.", "redirect" => "index.php"]);
 } else {
-  echo "<p>Incorrect password. Profile not deleted.</p>";
-  echo "<a href='profile.php'>Back to Profile</a>";
+  echo json_encode(["success" => false, "message" => "Incorrect password."]);
 }
-
 $conn->close();
 ?>

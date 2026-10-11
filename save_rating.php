@@ -1,10 +1,12 @@
 <?php
 session_start();
 include 'db_connect.php';
+include 'helpers.php';
+
+header('Content-Type: application/json');
 
 if (!isset($_SESSION['profileName'])) {
-  echo "<p>You must be logged in to rate someone.</p>";
-  echo "<a href='login.php'>Log In</a>";
+  echo json_encode(["success" => false, "message" => "You must be logged in to rate someone."]);
   exit;
 }
 
@@ -15,8 +17,7 @@ $rating = intval($_POST['rating']);
 $comment = $conn->real_escape_string($_POST['comment']);
 
 if ($rater == $target_name) {
-  echo "<p>You can't rate yourself!</p>";
-  echo "<a href='browse.php'>Back to Browse Skills</a>";
+  echo json_encode(["success" => false, "message" => "You can't rate yourself!"]);
   exit;
 }
 
@@ -25,8 +26,7 @@ $tn = $conn->real_escape_string($target_name);
 
 $connectionCheck = $conn->query("SELECT id FROM requests WHERE status = 'accepted' AND ((requester_name = '$r' AND target_id = $target_id) OR (requester_name = '$tn' AND target_name = '$r'))");
 if ($connectionCheck->num_rows == 0) {
-  echo "<p>You can only rate someone you've connected with.</p>";
-  echo "<a href='browse.php'>Back to Browse Skills</a>";
+  echo json_encode(["success" => false, "message" => "You can only rate someone you've connected with."]);
   exit;
 }
 
@@ -42,11 +42,9 @@ if ($existing->num_rows > 0) {
 }
 
 if ($conn->query($sql) === TRUE) {
-  echo "<p>$message</p>";
-  echo "<a href='browse.php'>Back to Browse Skills</a>";
+  echo json_encode(["success" => true, "message" => $message]);
 } else {
-  echo "Error: " . $conn->error;
+  echo json_encode(["success" => false, "message" => $conn->error]);
 }
-
 $conn->close();
 ?>

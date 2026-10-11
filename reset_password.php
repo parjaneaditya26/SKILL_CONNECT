@@ -54,9 +54,9 @@ if ($t == "" || $result->num_rows == 0) {
   </header>
   <main>
     <?php if ($error) { ?>
-      <p style="color:#dc2626; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+      <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
     <?php } elseif ($success) { ?>
-      <p style="color:#0d9488; text-align:center; margin-bottom:16px; font-weight:600;">Password updated! You can now log in.</p>
+      <p style="color:var(--accent); text-align:center; margin-bottom:16px; font-weight:600;">Password updated! You can now log in.</p>
       <p style="text-align:center;"><a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none;">Go to Login</a></p>
     <?php } else { ?>
       <form action="reset_password.php" method="POST">

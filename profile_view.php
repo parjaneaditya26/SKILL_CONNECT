@@ -62,7 +62,7 @@ $ratingCount = $avgRow['total'];
   </header>
 
   <main>
-    <div class="skill-card" style="margin: 0 auto 10px; max-width: 350px;">
+    <div class="skill-card profile-hero-card">
       <div class="avatar"><?php echo strtoupper(substr($user['name'], 0, 1)); ?></div>
       <span class="category-tag"><?php echo htmlspecialchars($user['branch']); ?></span>
       <span class="category-tag"><?php echo htmlspecialchars($user['year_of_study']); ?></span>
@@ -71,9 +71,9 @@ $ratingCount = $avgRow['total'];
       <?php } else { ?>
         <p class="rating-display no-rating">No ratings yet</p>
       <?php } ?>
-      <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Can teach:</p>
+      <p style="font-size:0.82rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Can teach:</p>
       <div class="skill-tags-row"><?php echo skillTags($user['teach_skill']); ?></div>
-      <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Wants to learn:</p>
+      <p style="font-size:0.82rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Wants to learn:</p>
       <div class="skill-tags-row"><?php echo skillTags($user['learn_skill']); ?></div>
       <?php if ($showContact) { ?>
         <p><strong>Contact:</strong> <?php echo htmlspecialchars($user['mobile']); ?></p>
@@ -84,11 +84,11 @@ $ratingCount = $avgRow['total'];
 
     <?php if ($currentUser && $currentUser != $user['name']) { ?>
       <p style="text-align:center; margin-bottom:30px;">
-        <a href="report_user.php?id=<?php echo $user['id']; ?>&name=<?php echo urlencode($user['name']); ?>" style="color:#94a3b8; font-size:0.82rem;">Report this profile</a>
+        <a href="report_user.php?id=<?php echo $user['id']; ?>&name=<?php echo urlencode($user['name']); ?>" style="color:var(--text-muted); font-size:0.82rem;">Report this profile</a>
       </p>
     <?php } ?>
 
-    <h2 style="color:#0f172a; margin-bottom:18px; font-size:1.3rem;">Reviews (<?php echo $ratingCount; ?>)</h2>
+    <h2 style="color:var(--text-dark); margin-bottom:18px; font-size:1.3rem;">Reviews (<?php echo $ratingCount; ?>)</h2>
     <div class="skill-list">
       <?php if ($ratings->num_rows > 0) { ?>
         <?php while ($r = $ratings->fetch_assoc()) { ?>
@@ -98,7 +98,7 @@ $ratingCount = $avgRow['total'];
             <?php if ($r['comment']) { ?>
               <p>"<?php echo htmlspecialchars($r['comment']); ?>"</p>
             <?php } ?>
-            <p style="font-size:0.78rem; color:#94a3b8;"><?php echo $r['created_at']; ?></p>
+            <p style="font-size:0.78rem; color:var(--text-muted);"><?php echo $r['created_at']; ?></p>
           </div>
         <?php } ?>
       <?php } else { ?>

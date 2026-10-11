@@ -38,7 +38,7 @@ $currentUser = $_SESSION['profileName'];
     <p>Share your experience learning from them.</p>
   </header>
   <main>
-    <form action="save_rating.php" method="POST">
+    <form action="save_rating.php" method="POST" class="ajax-form">
       <input type="hidden" name="target_id" value="<?php echo $target_id; ?>">
       <input type="hidden" name="target_name" value="<?php echo htmlspecialchars($target_name); ?>">
       <div class="form-group">

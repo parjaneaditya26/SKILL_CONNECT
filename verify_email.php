@@ -29,10 +29,10 @@ if ($result->num_rows > 0) {
   </header>
   <main>
     <?php if ($success) { ?>
-      <p style="text-align:center; color:#1d4ed8; font-weight:600;">✓ Email verified successfully, <?php echo htmlspecialchars($name); ?>!</p>
+      <p style="text-align:center; color:var(--accent); font-weight:600;">✓ Email verified successfully, <?php echo htmlspecialchars($name); ?>!</p>
       <p style="text-align:center; margin-top:10px;"><a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none;">Go to Login</a></p>
     <?php } else { ?>
-      <p style="text-align:center; color:#c1272d; font-weight:600;">This verification link is invalid or already used.</p>
+      <p style="text-align:center; color:var(--danger); font-weight:600;">This verification link is invalid or already used.</p>
     <?php } ?>
   </main>
   <footer><p>Skill Connect &copy; 2026 — A College Project (CEP)</p></footer>

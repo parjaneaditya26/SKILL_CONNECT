@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </header>
   <main>
     <?php if ($message) { ?>
-      <p style="text-align:center; margin-bottom:16px; font-weight:600; color:#0d9488;"><?php echo htmlspecialchars($message); ?></p>
+      <p style="text-align:center; margin-bottom:16px; font-weight:600; color:var(--accent);"><?php echo htmlspecialchars($message); ?></p>
     <?php } ?>
     <form action="forgot_password.php" method="POST">
       <?php echo csrf_field(); ?>
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       <button type="submit">Send Reset Link</button>
     </form>
     <p style="text-align:center; margin-top:16px; font-size:0.9rem;">
-      <a href="login.php" style="color:#0d9488; font-weight:600;">Back to Login</a>
+      <a href="login.php" style="color:var(--accent); font-weight:600;">Back to Login</a>
     </p>
   </main>
   <footer>

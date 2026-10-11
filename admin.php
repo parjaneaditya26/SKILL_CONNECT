@@ -32,13 +32,13 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
     <h1>Admin Dashboard</h1>
     <p>Overview of all users and requests. Admin can remove any entry.</p>
   </header>
-  <main style="max-width: 1100px; margin: 0 auto; text-align: left;">
+  <main>
     <p style="text-align:center; margin-bottom:20px;">
-      <a href="export_users.php" style="color:#0d9488; font-weight:600; margin-right:20px;">⬇ Export Users (CSV)</a>
-      <a href="export_requests.php" style="color:#0d9488; font-weight:600;">⬇ Export Requests (CSV)</a>
+      <a href="export_users.php" style="color:var(--accent); font-weight:600; margin-right:20px;">⬇ Export Users (CSV)</a>
+      <a href="export_requests.php" style="color:var(--accent); font-weight:600;">⬇ Export Requests (CSV)</a>
     </p>
 
-    <h2 style="color:#0f172a; margin-bottom:16px;">All Users (<?php echo $users->num_rows; ?>)</h2>
+    <h2 style="color:var(--text-dark); margin-bottom:16px;">All Users (<?php echo $users->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
         <tr><th>ID</th><th>Name</th><th>Email</th><th>Mobile</th><th>Branch</th><th>Year</th><th>Teaches</th><th>Wants to Learn</th><th>Verified</th><th>Joined</th><th>Action</th></tr>
@@ -65,7 +65,7 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
       </table>
     </div>
 
-    <h2 style="color:#0f172a; margin:30px 0 16px;">All Requests (<?php echo $requests->num_rows; ?>)</h2>
+    <h2 style="color:var(--text-dark); margin:30px 0 16px;">All Requests (<?php echo $requests->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
         <tr><th>ID</th><th>From</th><th>To</th><th>Status</th><th>Date</th><th>Action</th></tr>
@@ -87,7 +87,7 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
       </table>
     </div>
 
-    <h2 style="color:#0f172a; margin:30px 0 16px;">Reports (<?php echo $reports->num_rows; ?>)</h2>
+    <h2 style="color:var(--text-dark); margin:30px 0 16px;">Reports (<?php echo $reports->num_rows; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
         <tr><th>ID</th><th>Reporter</th><th>Target</th><th>Reason</th><th>Details</th><th>Date</th><th>Action</th></tr>

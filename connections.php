@@ -55,12 +55,16 @@ $result = $conn->query("SELECT * FROM requests WHERE status = 'accepted' AND (re
             <div class="avatar"><?php echo strtoupper(substr($otherName, 0, 1)); ?></div>
             <span class="category-tag"><?php echo htmlspecialchars($ou['branch']); ?></span>
             <h3><?php echo htmlspecialchars($otherName); ?></h3>
-            <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Can teach:</p>
+            <p style="font-size:0.82rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Can teach:</p>
             <div class="skill-tags-row"><?php echo skillTags($ou['teach_skill']); ?></div>
             <p><strong>Contact:</strong> <?php echo htmlspecialchars($ou['mobile']); ?></p>
             <a href="messages.php?with=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:10px;">Message</a>
             <a href="rate.php?id=<?php echo $ou['id']; ?>&name=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;">Rate</a>
-            <a href="disconnect.php?id=<?php echo $row['id']; ?>&view=received&csrf=<?php echo $csrf; ?>" class="declineBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;" onclick="return confirm('Disconnect from this person?');">Disconnect</a>
+            <form class="ajax-form inline-form" action="disconnect.php" style="margin-top:8px;">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+              <button type="submit" class="declineBtn" style="width:100%;" onclick="return confirm('Disconnect from this person?');">Disconnect</button>
+            </form>
           </div>
         <?php } ?>
       <?php } else { ?>

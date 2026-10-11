@@ -153,16 +153,16 @@ $branches = ["Computer Engineering","Information Technology","Mechanical Enginee
             <?php if ($row['year_of_study']) { ?><span class="category-tag"><?php echo htmlspecialchars($row['year_of_study']); ?></span><?php } ?>
             <h3>
               <a href="profile_view.php?id=<?php echo $row['id']; ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars($row['name']); ?></a>
-              <?php if ($row['verified']) { ?><span style="color:#0d9488; font-size:0.78rem; font-weight:600;"> ✓ Verified</span><?php } ?>
+              <?php if ($row['verified']) { ?><span style="color:var(--accent); font-size:0.78rem; font-weight:600;"> ✓ Verified</span><?php } ?>
             </h3>
             <?php if ($avgRating) { ?>
               <p class="rating-display">⭐ <?php echo $avgRating; ?> (<?php echo $ratingCount; ?> reviews)</p>
             <?php } else { ?>
               <p class="rating-display no-rating">No ratings yet</p>
             <?php } ?>
-            <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Can teach:</p>
+            <p style="font-size:0.82rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Can teach:</p>
             <div class="skill-tags-row"><?php echo skillTags($row['teach_skill']); ?></div>
-            <p style="font-size:0.82rem; color:#64748b; font-weight:600; margin-bottom:4px;">Wants to learn:</p>
+            <p style="font-size:0.82rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Wants to learn:</p>
             <div class="skill-tags-row"><?php echo skillTags($row['learn_skill']); ?></div>
             <?php if ($showContact) { ?>
               <p><strong>Contact:</strong> <?php echo htmlspecialchars($row['mobile']); ?></p>
@@ -171,14 +171,14 @@ $branches = ["Computer Engineering","Information Technology","Mechanical Enginee
             <?php } ?>
 
             <?php if ($row['name'] == $currentUser) { ?>
-              <p style="text-align:center; font-weight:600; color:#0d9488; margin-top:10px;">This is your profile</p>
+              <p style="text-align:center; font-weight:600; color:var(--accent); margin-top:10px;">This is your profile</p>
             <?php } elseif ($myRequestStatus == 'pending') { ?>
               <p class="status-label status-pending">Request Pending</p>
             <?php } elseif ($myRequestStatus == 'accepted') { ?>
               <p class="status-label status-accepted">✓ Connected</p>
               <a href="messages.php?with=<?php echo urlencode($row['name']); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;">Message</a>
             <?php } else { ?>
-              <form action="connect.php" method="POST" class="connect-form">
+              <form action="connect.php" method="POST" class="connect-form ajax-form">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="target_id" value="<?php echo $row['id']; ?>">
                 <input type="hidden" name="target_name" value="<?php echo htmlspecialchars($row['name']); ?>">

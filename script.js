@@ -89,3 +89,72 @@ if (chatToggle) {
     if (e.key === "Enter") sendChatMessage();
   });
 }
+function showToast(message, isError) {
+  let toast = document.getElementById("toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.className = isError ? "show error" : "show";
+  setTimeout(function () {
+    toast.className = "";
+  }, 3000);
+}
+
+function ajaxAction(url, formData, onSuccess) {
+  fetch(url, { method: "POST", body: formData })
+    .then(function (response) { return response.json(); })
+    .then(function (data) {
+      showToast(data.message, !data.success);
+      if (data.success) {
+        if (data.redirect) {
+          setTimeout(function () { window.location.href = data.redirect; }, 900);
+        } else if (onSuccess) {
+          setTimeout(onSuccess, 900);
+        }
+      }
+    })
+    .catch(function () {
+      showToast("Something went wrong. Please try again.", true);
+    });
+}
+
+document.querySelectorAll(".ajax-form").forEach(function (form) {
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const url = form.getAttribute("action");
+    const onSuccess = form.dataset.noReload
+      ? function () { startCooldown(form); }
+      : function () { window.location.reload(); };
+    ajaxAction(url, formData, onSuccess);
+  });
+});
+
+function startCooldown(form) {
+  const btn = form.querySelector("button[type=submit]");
+  if (!btn) return;
+  let seconds = 30;
+  btn.disabled = true;
+  btn.textContent = "Code sent ✓ (resend in " + seconds + "s)";
+  const timer = setInterval(function () {
+    seconds--;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      btn.disabled = false;
+      btn.textContent = "Resend code";
+    } else {
+      btn.textContent = "Code sent ✓ (resend in " + seconds + "s)";
+    }
+  }, 1000);
+}
+
+(function highlightActiveNav() {
+  const page = window.location.pathname.split("/").pop() || "index.php";
+  document.querySelectorAll("nav a.nav-link").forEach(function (a) {
+    const href = (a.getAttribute("href") || "").split("?")[0];
+    if (href === page) { a.classList.add("active"); }
+  });
+})();

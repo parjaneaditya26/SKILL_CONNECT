@@ -50,23 +50,23 @@ $csrf = csrf_token();
     <h1>Chat with <?php echo htmlspecialchars($withUser); ?></h1>
   </header>
   <main>
-    <div style="max-width:500px; margin:0 auto; background:white; border-radius:14px; border:1px solid #e2e8f0; padding:20px; text-align:left;">
+    <div style="max-width:720px; margin:0; background:white; border-radius:14px; border:1px solid var(--border); padding:20px; text-align:left;">
       <?php if ($messages->num_rows > 0) { ?>
         <?php while ($m = $messages->fetch_assoc()) { ?>
           <?php $isMine = ($m['sender_name'] == $currentUser); ?>
           <div style="margin-bottom:12px; text-align:<?php echo $isMine ? 'right' : 'left'; ?>;">
-            <div style="display:inline-block; max-width:80%; padding:10px 14px; border-radius:14px; background:<?php echo $isMine ? '#0d9488' : '#f1f5f9'; ?>; color:<?php echo $isMine ? 'white' : '#333'; ?>;">
+            <div style="display:inline-block; max-width:80%; padding:10px 14px; border-radius:14px; background:<?php echo $isMine ? 'var(--accent)' : 'var(--bg-soft)'; ?>; color:<?php echo $isMine ? 'white' : '#333'; ?>;">
               <?php echo htmlspecialchars($m['message']); ?>
             </div>
-            <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;"><?php echo timeAgo($m['created_at']); ?></div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;"><?php echo timeAgo($m['created_at']); ?></div>
           </div>
         <?php } ?>
       <?php } else { ?>
-        <p style="color:#94a3b8; text-align:center;">No messages yet. Say hello!</p>
+        <p style="color:var(--text-muted); text-align:center;">No messages yet. Say hello!</p>
       <?php } ?>
     </div>
 
-    <form action="send_message.php" method="POST" style="max-width:500px;">
+    <form action="send_message.php" method="POST" style="max-width:720px; margin:16px 0 0;">
       <?php echo csrf_field(); ?>
       <input type="hidden" name="receiver_name" value="<?php echo htmlspecialchars($withUser); ?>">
       <div class="form-group">
@@ -90,7 +90,6 @@ $csrf = csrf_token();
     </div>
   </div>
   <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

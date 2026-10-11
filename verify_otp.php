@@ -56,11 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </header>
   <main>
     <?php if ($success) { ?>
-      <p style="color:#0d9488; text-align:center; margin-bottom:16px; font-weight:600;">✓ Email verified successfully!</p>
+      <p style="color:var(--accent); text-align:center; margin-bottom:16px; font-weight:600;">✓ Email verified successfully!</p>
       <p style="text-align:center;"><a href="<?php echo isset($_SESSION['profileName']) ? 'profile.php' : 'login.php'; ?>" class="connectBtn" style="display:inline-block; text-decoration:none;">Continue</a></p>
     <?php } else { ?>
       <?php if ($error) { ?>
-        <p style="color:#dc2626; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+        <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
       <?php } ?>
       <form action="verify_otp.php" method="POST">
         <?php echo csrf_field(); ?>
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="submit">Verify</button>
       </form>
       <p style="text-align:center; margin-top:16px; font-size:0.9rem;">
-        <a href="resend_verification.php" style="color:#0d9488; font-weight:600;">Resend code</a>
+        <a href="resend_verification.php" style="color:var(--accent); font-weight:600;">Resend code</a>
       </p>
     <?php } ?>
   </main>

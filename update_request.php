@@ -1,27 +1,28 @@
 <?php
-// update_request.php
 session_start();
 include 'db_connect.php';
 include 'helpers.php';
 @include 'mailer.php';
 
+header('Content-Type: application/json');
+
 if (!isset($_SESSION['profileName'])) {
-  header("Location: login.php");
+  echo json_encode(["success" => false, "message" => "You must be logged in."]);
   exit;
 }
 
-if (!csrf_verify($_GET['csrf'] ?? '')) {
-  echo "Security check failed.";
+if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+  echo json_encode(["success" => false, "message" => "Security check failed."]);
   exit;
 }
 
-$id = intval($_GET['id']);
-$action = $_GET['action'];
+$id = intval($_POST['id']);
+$action = $_POST['action'];
 $currentUser = $conn->real_escape_string($_SESSION['profileName']);
 
 $check = $conn->query("SELECT * FROM requests WHERE id = $id AND target_name = '$currentUser'");
 if ($check->num_rows == 0) {
-  echo "You are not authorized to update this request.";
+  echo json_encode(["success" => false, "message" => "Not authorized."]);
   exit;
 }
 $request = $check->fetch_assoc();
@@ -35,16 +36,10 @@ if (function_exists('sendEmail')) {
   $emailResult = $conn->query("SELECT email FROM users WHERE name = '$rn'");
   if ($emailResult && $emailResult->num_rows > 0) {
     $emailRow = $emailResult->fetch_assoc();
-    $extraNote = ($status == "accepted") ? "<p>You can now see each other's contact details on Skill Connect.</p>" : "";
-    sendEmail(
-      $emailRow['email'],
-      $requesterName,
-      "Your Skill Connect request was " . $status,
-      "<p>Hi " . htmlspecialchars($requesterName) . ",</p><p><strong>" . htmlspecialchars($_SESSION['profileName']) . "</strong> has <strong>$status</strong> your connection request.</p>" . $extraNote
-    );
+    sendEmail($emailRow['email'], $requesterName, "Your Skill Connect request was " . $status, "<p>Hi " . htmlspecialchars($requesterName) . ",</p><p><strong>" . htmlspecialchars($_SESSION['profileName']) . "</strong> has <strong>$status</strong> your connection request.</p>");
   }
 }
 
-header("Location: requests.php?view=received");
-exit;
+echo json_encode(["success" => true, "message" => "Request $status!"]);
+$conn->close();
 ?>

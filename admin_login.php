@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </header>
   <main>
     <?php if ($error) { ?>
-      <p style="color:#dc2626; text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+      <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
     <?php } ?>
     <form action="admin_login.php" method="POST">
       <div class="form-group">

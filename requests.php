@@ -117,7 +117,7 @@ $result = $conn->query($sql);
             <?php } else { ?>
               <p>You sent a request to connect.</p>
             <?php } ?>
-            <p style="font-size: 0.85rem; color: #64748b;"><?php echo timeAgo($row['created_at']); ?></p>
+            <p style="font-size: 0.85rem; color: var(--text-muted);"><?php echo timeAgo($row['created_at']); ?></p>
 
             <?php if ($row['status'] == "accepted" && $otherMobile) { ?>
               <p><strong>Contact:</strong> <?php echo htmlspecialchars($otherMobile); ?></p>
@@ -125,15 +125,29 @@ $result = $conn->query($sql);
 
             <?php if ($view == "received" && $row['status'] == "pending") { ?>
               <div class="request-actions">
-                <a href="update_request.php?id=<?php echo $row['id']; ?>&action=accept&csrf=<?php echo $csrf; ?>" class="acceptBtn">Accept</a>
-                <a href="update_request.php?id=<?php echo $row['id']; ?>&action=decline&csrf=<?php echo $csrf; ?>" class="declineBtn">Decline</a>
+                <form class="ajax-form inline-form" action="update_request.php">
+                  <?php echo csrf_field(); ?>
+                  <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                  <input type="hidden" name="action" value="accept">
+                  <button type="submit" class="acceptBtn" style="width:100%;">Accept</button>
+                </form>
+                <form class="ajax-form inline-form" action="update_request.php">
+                  <?php echo csrf_field(); ?>
+                  <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                  <input type="hidden" name="action" value="decline">
+                  <button type="submit" class="declineBtn" style="width:100%;">Decline</button>
+                </form>
               </div>
             <?php } else { ?>
               <p class="status-label status-<?php echo $row['status']; ?>"><?php echo ucfirst($row['status']); ?></p>
               <?php if ($row['status'] == "accepted" && $otherId) { ?>
                 <a href="messages.php?with=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:10px;">Message</a>
                 <a href="rate.php?id=<?php echo $otherId; ?>&name=<?php echo urlencode($otherName); ?>" class="connectBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;">Rate this person</a>
-                <a href="disconnect.php?id=<?php echo $row['id']; ?>&view=<?php echo $view; ?>&csrf=<?php echo $csrf; ?>" class="declineBtn" style="display:block; text-align:center; text-decoration:none; margin-top:8px;" onclick="return confirm('Disconnect from this person?');">Disconnect</a>
+                <form class="ajax-form inline-form" action="disconnect.php" style="margin-top:8px;">
+                  <?php echo csrf_field(); ?>
+                  <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                  <button type="submit" class="declineBtn" style="width:100%;" onclick="return confirm('Disconnect from this person?');">Disconnect</button>
+                </form>
               <?php } ?>
             <?php } ?>
           </div>
