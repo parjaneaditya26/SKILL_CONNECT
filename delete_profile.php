@@ -17,6 +17,7 @@ $result = $conn->query("SELECT password FROM users WHERE name = '" . $conn->real
 $user = $result->fetch_assoc();
 
 if ($user && password_verify($password, $user['password'])) {
+  cleanupUserData($conn, $name);
   $conn->query("DELETE FROM users WHERE name = '" . $conn->real_escape_string($name) . "'");
   session_destroy();
   echo json_encode(["success" => true, "message" => "Profile deleted.", "redirect" => "index.php"]);

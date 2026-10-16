@@ -18,6 +18,7 @@ $result = $conn->query("SELECT * FROM requests WHERE status = 'accepted' AND (re
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My Connections - Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -31,6 +32,8 @@ $result = $conn->query("SELECT * FROM requests WHERE status = 'accepted' AND (re
       <a href="index.php" class="nav-link">Home</a>
       <a href="profile.php" class="nav-link">My Profile</a>
       <a href="browse.php" class="nav-link">Browse Skills</a>
+      <a href="announcements.php" class="nav-link">Announcements</a>
+      <a href="help_board.php" class="nav-link">Help Board</a>
       <a href="requests.php" class="nav-link">My Requests</a>
       <a href="connections.php" class="nav-link">My Connections</a>
       <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>

@@ -14,6 +14,7 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Dashboard - Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -25,6 +26,7 @@ $reports = $conn->query("SELECT * FROM reports ORDER BY id DESC");
     </a>
     <div class="nav-links">
       <a href="index.php" class="nav-link">Home</a>
+      <a href="admin_announcements.php" class="nav-link">Announcements</a>
       <a href="admin_logout.php" class="nav-link">Admin Logout</a>
     </div>
   </nav>
