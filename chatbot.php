@@ -6,6 +6,8 @@ include 'helpers.php';
 
 header('Content-Type: application/json');
 
+ensureSchema($conn);
+
 $userMessage = isset($_POST['message']) ? trim($_POST['message']) : "";
 $historyJson = isset($_POST['history']) ? $_POST['history'] : "[]";
 $history = json_decode($historyJson, true);
@@ -28,7 +30,7 @@ if ($currentUser !== "") {
   }
 }
 
-// Gather live platform context from database
+// Gather live platform context from MySQL database
 $allUsers = [];
 $resU = $conn->query("SELECT id, name, branch, year_of_study, teach_skill, learn_skill, verified FROM users ORDER BY id DESC LIMIT 40");
 if ($resU) { $allUsers = $resU->fetch_all(MYSQLI_ASSOC); }
@@ -38,13 +40,152 @@ $resS = $conn->query("SELECT s.*, (SELECT COUNT(*) FROM peer_session_participant
 if ($resS) { $upcomingSessions = $resS->fetch_all(MYSQLI_ASSOC); }
 
 $activeAnnouncements = [];
-$resA = $conn->query("SELECT id, title, category, deadline, pinned, DATEDIFF(deadline, CURDATE()) AS days_left FROM announcements WHERE (deadline IS NULL OR deadline >= CURDATE()) ORDER BY pinned DESC, created_at DESC LIMIT 8");
+$resA = $conn->query("SELECT id, title, category, body, deadline, pinned, DATEDIFF(deadline, CURDATE()) AS days_left FROM announcements WHERE (deadline IS NULL OR deadline >= CURDATE()) ORDER BY pinned DESC, created_at DESC LIMIT 8");
 if ($resA) { $activeAnnouncements = $resA->fetch_all(MYSQLI_ASSOC); }
 
 $openHelp = [];
 $resH = $conn->query("SELECT id, author_name, type, title, details FROM help_posts WHERE status = 'open' ORDER BY created_at DESC LIMIT 6");
 if ($resH) { $openHelp = $resH->fetch_all(MYSQLI_ASSOC); }
 
+/**
+ * Fixed Built-in Cloud AI API Call (works automatically across the entire website without any user/admin setup)
+ * 1. If GEMINI_API_KEY is configured in ai_config.php, calls Google Gemini API.
+ * 2. Otherwise, automatically calls the built-in free Cloud AI endpoint (https://text.pollinations.ai/openai)
+ *    with full live MySQL campus context so every question gets a real AI response out-of-the-box!
+ */
+function callFixedCloudAiApi($systemContext, $history, $userMessage) {
+  // Option A: If a Gemini API key is present in ai_config.php, try Gemini first
+  $gemKey = defined('GEMINI_API_KEY') ? trim(GEMINI_API_KEY) : '';
+  if ($gemKey !== '' && $gemKey !== 'YOUR_API_KEY_HERE') {
+    $convoText = "";
+    foreach (array_slice($history, -6) as $turn) {
+      if (isset($turn['sender'], $turn['text'])) {
+        $convoText .= ($turn['sender'] === 'user' ? "Student: " : "Assistant: ") . $turn['text'] . "\n";
+      }
+    }
+    $fullPrompt = $systemContext . "\n\nRecent Conversation:\n" . $convoText . "\nStudent question: " . $userMessage;
+    $gemPayload = json_encode(["contents" => [["parts" => [["text" => $fullPrompt]]]]]);
+
+    foreach (['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'] as $model) {
+      $gemUrl = "https://generativelanguage.googleapis.com/v1beta/models/" . $model . ":generateContent?key=" . urlencode($gemKey);
+      $resp = httpPostJson($gemUrl, $gemPayload, 10);
+      if ($resp['ok']) {
+        $data = json_decode($resp['body'], true);
+        $txt = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+        if (trim($txt) !== '') { return ["ok" => true, "text" => trim($txt)]; }
+      }
+    }
+  }
+
+  // Option B: Fixed Built-In Cloud AI API (Zero API Key Required — works out of the box on localhost!)
+  $messages = [
+    ["role" => "system", "content" => $systemContext]
+  ];
+  foreach (array_slice($history, -6) as $turn) {
+    if (isset($turn['sender'], $turn['text']) && trim($turn['text']) !== '') {
+      $messages[] = [
+        "role" => ($turn['sender'] === 'user' ? "user" : "assistant"),
+        "content" => (string)$turn['text']
+      ];
+    }
+  }
+  $messages[] = ["role" => "user", "content" => $userMessage];
+
+  $openAiPayload = json_encode([
+    "model" => "openai",
+    "messages" => $messages,
+    "temperature" => 0.6
+  ]);
+
+  $resp = httpPostJson("https://text.pollinations.ai/openai", $openAiPayload, 12);
+  if ($resp['ok']) {
+    $decoded = json_decode($resp['body'], true);
+    $replyText = $decoded['choices'][0]['message']['content'] ?? '';
+    if (trim($replyText) !== '') {
+      return ["ok" => true, "text" => trim($replyText)];
+    }
+    // Sometimes endpoint returns plain text directly
+    if (!is_array($decoded) && strlen(trim($resp['body'])) > 4 && strpos($resp['body'], '<html') === false) {
+      return ["ok" => true, "text" => trim($resp['body'])];
+    }
+  }
+
+  return ["ok" => false, "text" => ""];
+}
+
+function httpPostJson($url, $jsonBody, $timeoutSec = 10) {
+  if (function_exists('curl_init')) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+      "Content-Type: application/json",
+      "Accept: application/json"
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonBody);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSec);
+    $body = curl_exec($ch);
+    $code = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+    curl_close($ch);
+    if ($body !== false && $code >= 200 && $code < 300) {
+      return ["ok" => true, "body" => $body];
+    }
+  } else {
+    $opts = [
+      'http' => [
+        'method'  => 'POST',
+        'header'  => "Content-Type: application/json\r\nAccept: application/json\r\n",
+        'content' => $jsonBody,
+        'timeout' => $timeoutSec,
+        'ignore_errors' => true
+      ],
+      'ssl' => [
+        'verify_peer' => false,
+        'verify_peer_name' => false
+      ]
+    ];
+    $ctx = stream_context_create($opts);
+    $body = @file_get_contents($url, false, $ctx);
+    if ($body !== false && strlen(trim($body)) > 0) {
+      return ["ok" => true, "body" => $body];
+    }
+  }
+  return ["ok" => false, "body" => ""];
+}
+
+// Build live campus context string for the AI
+$mentorSummary = [];
+foreach (array_slice($allUsers, 0, 15) as $u) {
+  $mentorSummary[] = $u['name'] . " (ID:" . $u['id'] . ", " . $u['branch'] . ", " . $u['year_of_study'] . ") Teaches: " . $u['teach_skill'] . " | Learns: " . $u['learn_skill'];
+}
+$sessionSummary = [];
+foreach (array_slice($upcomingSessions, 0, 6) as $s) {
+  $sessionSummary[] = $s['title'] . " (" . $s['skill_topic'] . ") by " . $s['host_name'] . " on " . $s['session_date'] . " at " . $s['session_time'] . " [" . $s['mode'] . "]";
+}
+$announceSummary = [];
+foreach (array_slice($activeAnnouncements, 0, 6) as $a) {
+  $announceSummary[] = "[" . $a['category'] . "] " . $a['title'] . ($a['deadline'] ? " (Deadline: " . $a['deadline'] . ")" : "") . " - " . textCut($a['body'] ?? '', 120);
+}
+
+$systemContext = "You are the Smart AI Assistant for Skill Connect at MIT CSN (Maharashtra Institute of Technology Chhatrapati Sambhajinagar).\n"
+  . "Current logged-in student: " . ($currentUser ?: "Guest Student") . ($me ? " (Teaches: {$me['teach_skill']}, Wants to learn: {$me['learn_skill']}, Branch: {$me['branch']}, Year: {$me['year_of_study']})" : "") . ".\n"
+  . "Platform links you can include using markdown [Label](page.php): [Browse Skills](browse.php), [Peer Sessions](peer_sessions.php), [Announcements](announcements.php), [Saved Notices](saved_announcements.php), [Help Board](help_board.php), [My Profile](profile.php).\n"
+  . "Live Campus Mentors in DB: " . (count($mentorSummary) ? implode(" ; ", $mentorSummary) : "No mentors registered yet") . "\n"
+  . "Upcoming Peer Teaching Sessions in DB: " . (count($sessionSummary) ? implode(" ; ", $sessionSummary) : "No upcoming sessions scheduled right now") . "\n"
+  . "Active College Announcements in DB: " . (count($announceSummary) ? implode(" ; ", $announceSummary) : "No active announcements right now") . "\n"
+  . "Instructions: Answer the student's question accurately, concisely (2-6 bullet points or short paragraphs), and helpfully. If they ask about campus mentors, peer sessions, or announcements, use the live DB facts above and link to the relevant page. If they ask a coding, DSA, placement, or study question, give a clear, practical explanation.";
+
+// Call the fixed built-in Cloud AI API
+$aiResult = callFixedCloudAiApi($systemContext, $history, $userMessage);
+if ($aiResult['ok']) {
+  echo json_encode(["reply" => $aiResult['text']]);
+  exit;
+}
+
+// Offline Fallback: Smart Local Campus & Study AI Engine (if laptop has no internet connection)
 function generateSmartLocalReply($conn, $msg, $currentUser, $me, $allUsers, $upcomingSessions, $activeAnnouncements, $openHelp) {
   $q = strtolower($msg);
 
@@ -78,7 +219,7 @@ function generateSmartLocalReply($conn, $msg, $currentUser, $me, $allUsers, $upc
       $lines[] = "👉 Open [Announcements](announcements.php) to read full details or check your [Saved Notices](saved_announcements.php).";
       return implode("\n", $lines);
     } else {
-      return "No active announcements are posted right now. Check [Announcements](announcements.php) or use the [Admin Panel](admin_announcements.php) to post a notice!";
+      return "No active announcements are posted right now. Check [Announcements](announcements.php) soon for new campus notices!";
     }
   }
 
@@ -140,7 +281,7 @@ function generateSmartLocalReply($conn, $msg, $currentUser, $me, $allUsers, $upc
     return "**🗺️ 4-Step DSA & Placement Prep Roadmap:**\n• **Step 1 (Foundations):** Time complexity (Big-O), Arrays, Strings, Hashing, and Two Pointers.\n• **Step 2 (Core Structures):** Linked Lists, Stacks, Queues, Binary Trees, and BSTs.\n• **Step 3 (Advanced):** Graphs (BFS/DFS), Heaps, Recursion/Backtracking, and Dynamic Programming.\n• **Step 4 (Practice):** Solve 2 problems daily and join a DSA study group on [Peer Sessions](peer_sessions.php)!";
   }
 
-  // 6. Search for a specific skill or mentor (e.g. "who teaches...", "find mentor", "python", "java", "c++", "ui", "guitar", etc.)
+  // 6. Search for a specific skill or mentor
   $skillKeywords = ['python', 'java', 'javascript', 'react', 'web', 'html', 'css', 'php', 'sql', 'mysql', 'c++', 'c ', 'dsa', 'machine learning', 'ai', 'data', 'flutter', 'android', 'ui', 'ux', 'figma', 'design', 'git', 'linux', 'cloud', 'aws', 'cyber', 'iot', 'robotics', 'autocad', 'solidworks', 'matlab', 'guitar', 'music', 'photography', 'public speaking', 'english'];
   $detectedSkill = '';
   foreach ($skillKeywords as $kw) {
@@ -173,82 +314,14 @@ function generateSmartLocalReply($conn, $msg, $currentUser, $me, $allUsers, $upc
     }
   }
 
-  // 7. Admin access question
-  if (strpos($q, 'admin') !== false) {
-    return "You can open the **Admin Control Center** anytime from the **🛡️ Admin Login** button on the [Home Page](index.php?view_site=1) using the admin password. From there, you can manage users, peer sessions, announcements, help posts, and CSV exports!";
-  }
-
   // Default helpful overview with live stats
   $uCount = count($allUsers);
   $sCount = count($upcomingSessions);
   $aCount = count($activeAnnouncements);
   $greeting = $currentUser ? "Hi **$currentUser**! " : "Hi there! ";
-  return $greeting . "I'm your **Skill Connect Smart AI**. Right now on campus we have **$uCount+ members**, **$sCount upcoming peer sessions**, and **$aCount active announcements**.\n\nYou can ask me:\n• *\"Find a mentor for Python / Web Dev / DSA\"*\n• *\"Show upcoming peer teaching sessions\"*\n• *\"Who is my best skill swap match?\"*\n• *\"What are the latest announcements?\"*\n• *\"Give me a learning roadmap for DSA or Web Dev\"*";
+  return $greeting . "I'm your **Skill Connect Smart AI**. Right now on campus we have **$uCount registered student(s)**, **$sCount upcoming peer session(s)**, and **$aCount active announcement(s)**.\n\nYou can ask me:\n• *\"Find a mentor for Python / Web Dev / DSA\"*\n• *\"Show upcoming peer teaching sessions\"*\n• *\"Who is my best skill swap match?\"*\n• *\"What are the latest announcements?\"*\n• *\"Give me a learning roadmap for DSA or Web Dev\"*";
 }
 
-// Try Gemini API if a valid key is configured
-$apiKey = defined('GEMINI_API_KEY') ? trim(GEMINI_API_KEY) : '';
-if ($apiKey !== '' && $apiKey !== 'YOUR_API_KEY_HERE' && function_exists('curl_init')) {
-  $mentorSummary = [];
-  foreach (array_slice($allUsers, 0, 15) as $u) {
-    $mentorSummary[] = $u['name'] . " (" . $u['branch'] . ", " . $u['year_of_study'] . ") Teaches: " . $u['teach_skill'] . " | Learns: " . $u['learn_skill'];
-  }
-  $sessionSummary = [];
-  foreach (array_slice($upcomingSessions, 0, 6) as $s) {
-    $sessionSummary[] = $s['title'] . " (" . $s['skill_topic'] . ") by " . $s['host_name'] . " on " . $s['session_date'] . " " . $s['session_time'] . " [" . $s['mode'] . "]";
-  }
-  $announceSummary = [];
-  foreach (array_slice($activeAnnouncements, 0, 6) as $a) {
-    $announceSummary[] = "[" . $a['category'] . "] " . $a['title'] . ($a['deadline'] ? " (Due: " . $a['deadline'] . ")" : "");
-  }
-
-  $systemContext = "You are the Smart AI Assistant for Skill Connect at MIT CSN (Maharashtra Institute of Technology Chhatrapati Sambhajinagar).\n"
-    . "Current user: " . ($currentUser ?: "Guest Visitor") . ($me ? " (Teaches: {$me['teach_skill']}, Wants to learn: {$me['learn_skill']}, Branch: {$me['branch']})" : "") . ".\n"
-    . "Platform pages you can link to using [Label](page.php): [Browse Skills](browse.php), [Peer Sessions](peer_sessions.php), [Announcements](announcements.php), [Saved Notices](saved_announcements.php), [Help Board](help_board.php), [My Profile](profile.php), [Admin Dashboard](admin.php).\n"
-    . "Live Mentors on platform: " . implode(" ; ", $mentorSummary) . "\n"
-    . "Upcoming Peer Teaching Sessions: " . implode(" ; ", $sessionSummary) . "\n"
-    . "Active Announcements: " . implode(" ; ", $announceSummary) . "\n"
-    . "Keep answers concise (2-5 bullet points or sentences), helpful, and grounded in this live campus data.";
-
-  $convoText = "";
-  foreach (array_slice($history, -6) as $turn) {
-    if (isset($turn['sender'], $turn['text'])) {
-      $convoText .= ($turn['sender'] === 'user' ? "Student: " : "Assistant: ") . $turn['text'] . "\n";
-    }
-  }
-
-  $fullPrompt = $systemContext . "\n\nRecent Conversation:\n" . $convoText . "\nStudent question: " . $userMessage;
-  $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . urlencode($apiKey);
-
-  $data = [
-    "contents" => [
-      ["parts" => [["text" => $fullPrompt]]]
-    ]
-  ];
-
-  $ch = curl_init($url);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-  curl_setopt($ch, CURLOPT_POST, true);
-  curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
-  curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-  curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-
-  $response = curl_exec($ch);
-  $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
-
-  if ($response !== false && $httpCode == 200) {
-    $result = json_decode($response, true);
-    $apiReply = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
-    if (trim($apiReply) !== '') {
-      echo json_encode(["reply" => trim($apiReply)]);
-      exit;
-    }
-  }
-}
-
-// Smart Local Campus AI Engine (always works, zero latency, live MySQL data)
 $smartReply = generateSmartLocalReply($conn, $userMessage, $currentUser, $me, $allUsers, $upcomingSessions, $activeAnnouncements, $openHelp);
 echo json_encode(["reply" => $smartReply]);
 ?>

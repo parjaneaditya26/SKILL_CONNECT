@@ -135,6 +135,21 @@ function ensureSchema($conn) {
     'aditya.joshi@mit.asia',
     'ananya.more@mit.asia'
   )");
+
+  // 8. Per-user seen state for Peer Sessions & Announcements notification badges
+  $conn->query("CREATE TABLE IF NOT EXISTS user_seen_state (
+    user_name VARCHAR(100) PRIMARY KEY,
+    seen_session_id INT NOT NULL DEFAULT 0,
+    seen_announcement_id INT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  )");
+
+  // 9. Platform settings table (stores Gemini API key configurable from Admin Dashboard)
+  $conn->query("CREATE TABLE IF NOT EXISTS platform_settings (
+    setting_key VARCHAR(60) PRIMARY KEY,
+    setting_value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  )");
 }
 
 if (isset($conn) && ($conn instanceof mysqli)) {
@@ -270,13 +285,84 @@ function siteNav($currentUser = '') {
     $currentUser = $_SESSION['profileName'];
   }
   $savedCount = 0;
-  $upcomingSessions = 0;
+  $unreadSessions = 0;
+  $unreadAnnouncements = 0;
 
   if (isset($conn) && ($conn instanceof mysqli)) {
     ensureSchema($conn);
-    $resS = $conn->query("SELECT COUNT(*) AS c FROM peer_sessions WHERE status = 'upcoming'");
-    if ($resS) { $upcomingSessions = intval($resS->fetch_assoc()['c']); }
+
+    $maxSessionId = 0;
+    $rMaxS = $conn->query("SELECT COALESCE(MAX(id), 0) AS m FROM peer_sessions");
+    if ($rMaxS) { $maxSessionId = intval($rMaxS->fetch_assoc()['m']); }
+
+    $maxAnnId = 0;
+    $rMaxA = $conn->query("SELECT COALESCE(MAX(id), 0) AS m FROM announcements");
+    if ($rMaxA) { $maxAnnId = intval($rMaxA->fetch_assoc()['m']); }
+
     if ($currentUser !== '') {
+      $stmtInit = $conn->prepare("INSERT IGNORE INTO user_seen_state (user_name, seen_session_id, seen_announcement_id) VALUES (?, 0, 0)");
+      if ($stmtInit) {
+        $stmtInit->bind_param("s", $currentUser);
+        $stmtInit->execute();
+        $stmtInit->close();
+      }
+
+      $seenSessionId = 0;
+      $seenAnnId = 0;
+      $stmtSeen = $conn->prepare("SELECT seen_session_id, seen_announcement_id FROM user_seen_state WHERE user_name = ?");
+      if ($stmtSeen) {
+        $stmtSeen->bind_param("s", $currentUser);
+        $stmtSeen->execute();
+        $rSeen = $stmtSeen->get_result();
+        if ($rSeen && ($rowSeen = $rSeen->fetch_assoc())) {
+          $seenSessionId = intval($rowSeen['seen_session_id']);
+          $seenAnnId = intval($rowSeen['seen_announcement_id']);
+        }
+        $stmtSeen->close();
+      }
+
+      // If rows were deleted/reset in DB, clamp seen IDs so new posts always notify
+      if ($seenSessionId > $maxSessionId) {
+        $seenSessionId = $maxSessionId;
+        $stmtClS = $conn->prepare("UPDATE user_seen_state SET seen_session_id = ? WHERE user_name = ?");
+        if ($stmtClS) { $stmtClS->bind_param("is", $maxSessionId, $currentUser); $stmtClS->execute(); $stmtClS->close(); }
+      }
+      if ($seenAnnId > $maxAnnId) {
+        $seenAnnId = $maxAnnId;
+        $stmtClA = $conn->prepare("UPDATE user_seen_state SET seen_announcement_id = ? WHERE user_name = ?");
+        if ($stmtClA) { $stmtClA->bind_param("is", $maxAnnId, $currentUser); $stmtClA->execute(); $stmtClA->close(); }
+      }
+
+      // Save previous seen IDs for optional 'NEW' card badge on the current page view
+      $GLOBALS['sc_prev_seen_session_id'] = $seenSessionId;
+      $GLOBALS['sc_prev_seen_ann_id'] = $seenAnnId;
+
+      // When user clicks and opens peer_sessions.php or announcements.php, mark all current items as read!
+      $currentScript = basename($_SERVER['PHP_SELF'] ?? '');
+      if ($currentScript === 'peer_sessions.php') {
+        $seenSessionId = $maxSessionId;
+        $stmtUpS = $conn->prepare("UPDATE user_seen_state SET seen_session_id = ? WHERE user_name = ?");
+        if ($stmtUpS) {
+          $stmtUpS->bind_param("is", $maxSessionId, $currentUser);
+          $stmtUpS->execute();
+          $stmtUpS->close();
+        }
+      } elseif ($currentScript === 'announcements.php') {
+        $seenAnnId = $maxAnnId;
+        $stmtUpA = $conn->prepare("UPDATE user_seen_state SET seen_announcement_id = ? WHERE user_name = ?");
+        if ($stmtUpA) {
+          $stmtUpA->bind_param("is", $maxAnnId, $currentUser);
+          $stmtUpA->execute();
+          $stmtUpA->close();
+        }
+      }
+
+      $resS = $conn->query("SELECT COUNT(*) AS c FROM peer_sessions WHERE status = 'upcoming' AND id > " . intval($seenSessionId));
+      if ($resS) { $unreadSessions = intval($resS->fetch_assoc()['c']); }
+
+      $resA = $conn->query("SELECT COUNT(*) AS c FROM announcements WHERE (deadline IS NULL OR deadline >= CURDATE()) AND id > " . intval($seenAnnId));
+      if ($resA) { $unreadAnnouncements = intval($resA->fetch_assoc()['c']); }
+
       $stmtSaved = $conn->prepare("SELECT COUNT(*) AS c FROM saved_announcements WHERE user_name = ?");
       if ($stmtSaved) {
         $stmtSaved->bind_param("s", $currentUser);
@@ -300,9 +386,12 @@ function siteNav($currentUser = '') {
         <a href="browse.php" class="nav-link">🔍 Browse Skills</a>
         <a href="peer_sessions.php" class="nav-link">
           🎓 Peer Sessions
-          <?php if ($upcomingSessions > 0) { ?><span class="notif-badge subtle"><?php echo $upcomingSessions; ?></span><?php } ?>
+          <?php if ($unreadSessions > 0) { ?><span class="notif-badge subtle"><?php echo $unreadSessions; ?></span><?php } ?>
         </a>
-        <a href="announcements.php" class="nav-link">📢 Announcements</a>
+        <a href="announcements.php" class="nav-link">
+          📢 Announcements
+          <?php if ($unreadAnnouncements > 0) { ?><span class="notif-badge subtle"><?php echo $unreadAnnouncements; ?></span><?php } ?>
+        </a>
         <a href="saved_announcements.php" class="nav-link">
           🔖 Saved Notices
           <?php if ($savedCount > 0) { ?><span class="notif-badge subtle"><?php echo $savedCount; ?></span><?php } ?>
@@ -420,7 +509,7 @@ function layoutEnd($mode = 'user') {
     <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
     <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
-  <?php renderChatbot(); ?>
+  <?php if ($mode !== 'admin') { renderChatbot(); } ?>
   <script src="script.js?v=3"></script>
 </body>
 </html>

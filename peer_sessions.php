@@ -185,6 +185,7 @@ layoutStart("Peer Teaching Sessions", "Peer Teaching Sessions", "Join live stude
           <div class="announce-card session-card <?php echo $s['featured'] ? 'is-pinned' : ''; ?> <?php echo !$isUpcoming ? 'is-closed' : ''; ?>">
             <div class="announce-top">
               <span class="category-tag"><?php echo h($s['skill_topic']); ?></span>
+              <?php if ($currentUser !== '' && isset($GLOBALS['sc_prev_seen_session_id']) && intval($s['id']) > intval($GLOBALS['sc_prev_seen_session_id'])) { ?><span class="pin-badge" style="background:var(--accent); color:#fff; border-color:var(--accent);">✨ NEW</span><?php } ?>
               <span class="session-mode-tag <?php echo strtolower($s['mode']) === 'online' ? 'online' : 'campus'; ?>">
                 <?php echo strtolower($s['mode']) === 'online' ? '🌐 Online' : '🏫 On-Campus'; ?>
               </span>

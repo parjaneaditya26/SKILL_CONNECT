@@ -86,6 +86,7 @@ layoutStart("Announcements", "College Announcements", "Placements, internships, 
           <div class="announce-card <?php echo $a['pinned'] ? 'is-pinned' : ''; ?> <?php echo $closed ? 'is-closed' : ''; ?>">
             <div class="announce-top">
               <span class="category-tag"><?php echo h($a['category']); ?></span>
+              <?php if ($currentUser !== '' && isset($GLOBALS['sc_prev_seen_ann_id']) && intval($a['id']) > intval($GLOBALS['sc_prev_seen_ann_id'])) { ?><span class="pin-badge" style="background:var(--accent); color:#fff; border-color:var(--accent);">✨ NEW</span><?php } ?>
               <?php if ($a['pinned']) { ?><span class="pin-badge">📌 Pinned</span><?php } ?>
               <?php if ($info) { ?><span class="deadline-tag <?php echo $info[1]; ?>"><?php echo h($info[0]); ?></span><?php } ?>
             </div>
