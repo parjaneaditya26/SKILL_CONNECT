@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (empty($_SESSION["isAdmin"])) {
-  header("Location: admin_login.php");
+  header("Location: login.php");
   exit;
 }
 

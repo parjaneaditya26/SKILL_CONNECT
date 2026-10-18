@@ -118,16 +118,13 @@ function ensureSchema($conn) {
     UNIQUE KEY uniq_session_participant (session_id, user_name)
   )");
 
-  // 7. Auto-seed initial Peer Sessions if empty so home page & dashboard immediately show upcoming sessions
-  $countPS = $conn->query("SELECT COUNT(*) AS c FROM peer_sessions");
-  if ($countPS && intval($countPS->fetch_assoc()['c']) === 0) {
-    $conn->query("INSERT INTO peer_sessions (host_name, title, skill_topic, description, session_date, session_time, duration_mins, mode, location_link, max_seats, status, featured) VALUES
-      ('Aarav Deshmukh', 'Full-Stack Web Dev Crash Course (React + PHP)', 'Web Development', 'Hands-on peer workshop covering component architecture, REST APIs, and connecting PHP & MySQL backends.', DATE_ADD(CURDATE(), INTERVAL 2 DAY), '4:30 PM', 90, 'Online', 'https://meet.google.com/sc-webdev-mit', 25, 'upcoming', 1),
-      ('Sneha Kulkarni', 'DSA Graph & Tree Algorithms Problem Solving', 'Data Structures & Algorithms', 'Live coding and placement-focused walkthrough of BFS, DFS, Dijkstra, and Tree DP questions.', DATE_ADD(CURDATE(), INTERVAL 4 DAY), '5:00 PM', 60, 'Campus', 'CSE Lab 2, Main Building (2nd Floor)', 20, 'upcoming', 1),
-      ('Rohan Patil', 'Python for Data Science & Machine Learning', 'Python & ML', 'Practical session on NumPy, Pandas, data cleaning, and training your first Scikit-learn model.', DATE_ADD(CURDATE(), INTERVAL 6 DAY), '3:15 PM', 75, 'Online', 'https://meet.google.com/sc-python-ml', 30, 'upcoming', 0),
-      ('Priya Sharma', 'UI/UX Prototyping in Figma for Hackathons', 'UI/UX Design', 'Learn how to design clean wireframes, design systems, and clickable hackathon prototypes in 60 minutes.', DATE_ADD(CURDATE(), INTERVAL 8 DAY), '4:00 PM', 60, 'Campus', 'Design Studio Seminar Hall, IT Dept', 18, 'upcoming', 0)
-    ");
-  }
+  // Clean up any previously auto-seeded demo peer sessions so deleted sessions never come back
+  $conn->query("DELETE FROM peer_sessions WHERE title IN (
+    'Full-Stack Web Dev Crash Course (React + PHP)',
+    'DSA Graph & Tree Algorithms Problem Solving',
+    'Python for Data Science & Machine Learning',
+    'UI/UX Prototyping in Figma for Hackathons'
+  )");
 }
 
 if (isset($conn) && ($conn instanceof mysqli)) {
@@ -262,7 +259,6 @@ function siteNav($currentUser = '') {
   if ($currentUser === '' && isset($_SESSION['profileName'])) {
     $currentUser = $_SESSION['profileName'];
   }
-  $isAdmin = !empty($_SESSION['isAdmin']);
   $savedCount = 0;
   $upcomingSessions = 0;
 
@@ -304,20 +300,10 @@ function siteNav($currentUser = '') {
         <a href="help_board.php" class="nav-link">🤝 Help Board</a>
         <a href="requests.php" class="nav-link">📬 My Requests</a>
         <a href="connections.php" class="nav-link">💬 My Connections</a>
+        <a href="logout.php" class="nav-link" style="margin-top:10px; border-top:1px solid var(--border); padding-top:12px; color:var(--danger); font-weight:600;">🚪 Logout (<?php echo h($currentUser); ?>)</a>
       <?php } else { ?>
         <a href="profile.php" class="nav-link">✨ Create Profile</a>
         <a href="login.php" class="nav-link">🔑 Student Login</a>
-        <a href="peer_sessions.php" class="nav-link">
-          🎓 Peer Sessions
-          <?php if ($upcomingSessions > 0) { ?><span class="notif-badge subtle"><?php echo $upcomingSessions; ?></span><?php } ?>
-        </a>
-        <a href="announcements.php" class="nav-link">📢 Announcements</a>
-      <?php } ?>
-
-
-
-      <?php if ($currentUser) { ?>
-        <a href="logout.php" class="nav-link">🚪 Logout (<?php echo h($currentUser); ?>)</a>
       <?php } ?>
     </div>
   </nav>

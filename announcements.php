@@ -11,17 +11,6 @@ $filter = isset($_GET['category']) ? $_GET['category'] : '';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 if (!in_array($filter, $categories, true)) { $filter = ''; }
 
-// Seed default college announcements if table is empty so page never looks blank
-$chkAnn = $conn->query("SELECT COUNT(*) AS c FROM announcements");
-if ($chkAnn && intval($chkAnn->fetch_assoc()['c']) === 0) {
-  $conn->query("INSERT INTO announcements (title, body, category, link, deadline, pinned) VALUES
-    ('TCS Digital & Ninja Campus Recruitment Drive 2026', 'Final Year (BE/B.Tech all branches) students with 60%+ aggregate can register for the upcoming TCS Campus Drive. Aptitude + coding test in Main Auditorium.', 'Placements', 'https://nextstep.tcs.com', DATE_ADD(CURDATE(), INTERVAL 5 DAY), 1),
-    ('Smart India Hackathon (SIH) Internal Shortlisting', 'Form teams of 6 students (at least 1 female member mandatory) and submit your problem statement presentation to the Innovation Cell.', 'Hackathons', 'https://sih.gov.in', DATE_ADD(CURDATE(), INTERVAL 7 DAY), 1),
-    ('AICTE Pragati & Saksham Scholarship Applications Open', 'Eligible FY/SY students can submit their income and admission documents on the National Scholarship Portal before the deadline.', 'Scholarships', 'https://scholarships.gov.in', DATE_ADD(CURDATE(), INTERVAL 14 DAY), 0),
-    ('AWS Cloud & DevOps 2-Day Hands-On Workshop', 'Organized by Dept. of Computer Engineering & IT. Free AWS Educate credits and participation certificates for all attendees.', 'Workshops', '', DATE_ADD(CURDATE(), INTERVAL 4 DAY), 0),
-    ('Summer Research & Software Engineering Internship — DRDO / Persistent', 'TY and Final Year students interested in 8-week summer internships can apply via the Training & Placement Portal.', 'Internships', '', DATE_ADD(CURDATE(), INTERVAL 10 DAY), 0)
-  ");
-}
 
 $sql = "SELECT *, DATEDIFF(deadline, CURDATE()) AS days_left FROM announcements WHERE 1=1";
 if ($filter !== '') {

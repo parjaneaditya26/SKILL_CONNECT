@@ -4,18 +4,28 @@ include 'db_connect.php';
 include 'helpers.php';
 
 $error = "";
+$ADMIN_USERNAME = "admin";
+$ADMIN_PASSWORD = "skillconnect2026";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   if (!csrf_verify($_POST['csrf_token'] ?? '')) {
     $error = "Security check failed. Please try again.";
   } else {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $loginInput = trim($_POST['email'] ?? '');
+    $password = trim($_POST['password'] ?? '');
 
-    $result = $conn->query("SELECT * FROM users WHERE email = '" . $conn->real_escape_string($email) . "'");
+    // If admin logs in via Student Login with username "admin" and password "skillconnect2026", open Admin Dashboard
+    if (strtolower($loginInput) === strtolower($ADMIN_USERNAME) && $password === $ADMIN_PASSWORD) {
+      $_SESSION['isAdmin'] = true;
+      header("Location: admin.php");
+      exit;
+    }
+
+    $esc = $conn->real_escape_string($loginInput);
+    $result = $conn->query("SELECT * FROM users WHERE email = '$esc' OR name = '$esc' LIMIT 1");
     if ($result && $result->num_rows > 0) {
       $user = $result->fetch_assoc();
-      if (password_verify($password, $user['password'])) {
+      if (password_verify($_POST['password'] ?? '', $user['password'])) {
         $_SESSION['profileName'] = $user['name'];
         header("Location: index.php");
         exit;
@@ -23,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = "Incorrect password.";
       }
     } else {
-      $error = "No profile found with that email.";
+      $error = "No profile found with that email or username.";
     }
   }
 }
@@ -36,8 +46,8 @@ layoutStart("Log In", "Student Log In", "Welcome back to Skill Connect.");
     <form action="login.php" method="POST">
       <?php echo csrf_field(); ?>
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" required placeholder="you@mit.asia">
+        <label for="email">Email Address / Username</label>
+        <input type="text" id="email" name="email" required placeholder="you@mit.asia">
       </div>
       <div class="form-group">
         <label for="password">Password</label>
@@ -53,7 +63,5 @@ layoutStart("Log In", "Student Log In", "Welcome back to Skill Connect.");
     </p>
     <p style="text-align:center; margin-top:8px; font-size:0.9rem; color:var(--text-muted);">
       New here? <a href="profile.php" style="color:var(--accent); font-weight:600;">Create a profile</a>
-      &nbsp;·&nbsp;
-      <a href="admin_login.php" style="color:var(--accent-dark); font-weight:600;">🛡️ Admin Access</a>
     </p>
 <?php layoutEnd(); ?>

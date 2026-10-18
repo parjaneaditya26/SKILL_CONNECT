@@ -1,8 +1,7 @@
 <?php
 session_start();
-// Early Admin Access: automatically enable admin session when opening Admin Dashboard directly
 if (empty($_SESSION["isAdmin"])) {
-  header("Location: admin_login.php");
+  header("Location: login.php");
   exit;
 }
 
@@ -374,7 +373,16 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
     <section id="sessions-section" class="admin-section-panel">
       <div class="dash-section-head" style="margin-top:28px;">
         <h2>🎓 Peer Teaching Sessions (<?php echo count($sessionsList); ?>)</h2>
-        <a href="peer_sessions.php">Open Peer Sessions Page →</a>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <?php if (count($sessionsList) > 0) { ?>
+            <form class="ajax-form inline-form" action="peer_session_action.php" method="POST">
+              <?php echo csrf_field(); ?>
+              <input type="hidden" name="action" value="delete_all">
+              <button type="submit" class="btn-danger" style="padding:5px 12px; font-size:0.78rem;">🗑️ Delete All Sessions</button>
+            </form>
+          <?php } ?>
+          <a href="peer_sessions.php">Open Peer Sessions Page →</a>
+        </div>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">

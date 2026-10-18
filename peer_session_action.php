@@ -23,6 +23,14 @@ if (!csrf_verify($_POST['csrf_token'] ?? '')) {
 $id = intval($_POST['id'] ?? 0);
 $action = $_POST['action'] ?? '';
 
+if ($action === 'delete_all' && $isAdmin) {
+  $conn->query("DELETE FROM peer_session_participants");
+  $conn->query("DELETE FROM peer_sessions");
+  echo json_encode(["success" => true, "message" => "All peer teaching sessions deleted permanently."]);
+  $conn->close();
+  exit;
+}
+
 $session = null;
 $s = $conn->prepare("SELECT id, host_name, featured FROM peer_sessions WHERE id = ?");
 if ($s) {

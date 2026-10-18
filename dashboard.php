@@ -126,6 +126,10 @@ $helpLabels = ["teammates" => "Looking for teammates", "help" => "Needs help"];
 
 layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening across MIT CSN today.");
 ?>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:16px;">
+      <a href="profile.php" class="btn-outline" style="font-size:0.85rem; padding:7px 14px;">👤 Edit Profile</a>
+      <a href="logout.php" class="btn-outline" style="font-size:0.85rem; padding:7px 14px; border-color:var(--danger); color:var(--danger);">🚪 Log Out</a>
+    </div>
     <?php if (!$me['verified']) { ?>
       <div class="notice">Your email isn't verified yet. <a href="profile.php">Verify it from your profile</a> to receive announcement emails.</div>
     <?php } ?>
