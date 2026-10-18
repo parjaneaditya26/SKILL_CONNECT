@@ -47,7 +47,7 @@ layoutStart("Log In", "Student Log In", "Welcome back to Skill Connect.");
       <?php echo csrf_field(); ?>
       <div class="form-group">
         <label for="email">Email Address / Username</label>
-        <input type="text" id="email" name="email" required placeholder="you@mit.asia">
+        <input type="text" id="email" name="email" required placeholder="you@gmail.com">
       </div>
       <div class="form-group">
         <label for="password">Password</label>

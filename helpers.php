@@ -118,24 +118,6 @@ function ensureSchema($conn) {
     UNIQUE KEY uniq_session_participant (session_id, user_name)
   )");
 
-  // Clean up any previously auto-seeded demo peer sessions so deleted sessions never come back
-  $conn->query("DELETE FROM peer_sessions WHERE title IN (
-    'Full-Stack Web Dev Crash Course (React + PHP)',
-    'DSA Graph & Tree Algorithms Problem Solving',
-    'Python for Data Science & Machine Learning',
-    'UI/UX Prototyping in Figma for Hackathons'
-  )");
-
-  // Clean up any previously loaded sample @mit.asia demo profiles
-  $conn->query("DELETE FROM users WHERE email IN (
-    'aarav.deshmukh@mit.asia',
-    'sneha.kulkarni@mit.asia',
-    'rohan.patil@mit.asia',
-    'priya.sharma@mit.asia',
-    'aditya.joshi@mit.asia',
-    'ananya.more@mit.asia'
-  )");
-
   // 8. Per-user seen state for Peer Sessions & Announcements notification badges
   $conn->query("CREATE TABLE IF NOT EXISTS user_seen_state (
     user_name VARCHAR(100) PRIMARY KEY,
@@ -144,12 +126,87 @@ function ensureSchema($conn) {
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )");
 
-  // 9. Platform settings table (stores Gemini API key configurable from Admin Dashboard)
+  // 9. Platform settings table (tracks one-time initial seed so deleted items NEVER come back)
   $conn->query("CREATE TABLE IF NOT EXISTS platform_settings (
     setting_key VARCHAR(60) PRIMARY KEY,
     setting_value TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )");
+
+  // One-time starter data: 3 Students, 3 Peer Sessions, 2 College Announcements, 2 Help Desk Posts.
+  // Tracked by 'starter_pack_3_3_2_2_v1' in platform_settings so if Admin deletes any item later, it stays deleted permanently!
+  $resStarter = $conn->query("SELECT setting_value FROM platform_settings WHERE setting_key = 'starter_pack_3_3_2_2_v1' LIMIT 1");
+  if (!$resStarter || $resStarter->num_rows === 0) {
+    $conn->query("INSERT INTO platform_settings (setting_key, setting_value) VALUES ('starter_pack_3_3_2_2_v1', '1')");
+
+    $defaultHash = password_hash('student123', PASSWORD_DEFAULT);
+
+    // 1. Seed 3 Students (only if they don't already exist)
+    $starterUsers = [
+      ['Aarav Deshmukh', 'aarav.deshmukh@gmail.com', '9823011223', 'Computer Engineering', 'TY', 'React, JavaScript, PHP, Git', 'Python, Machine Learning'],
+      ['Sneha Kulkarni', 'sneha.kulkarni@gmail.com', '9823044556', 'Information Technology', 'Final Year', 'Data Structures, C++, Java, SQL', 'React, UI/UX Design'],
+      ['Rohan Patil', 'rohan.patil@gmail.com', '9823077889', 'Computer Engineering', 'TY', 'Python, Machine Learning, Data Science', 'React, PHP']
+    ];
+    $stmtU = $conn->prepare("INSERT INTO users (name, email, mobile, password, branch, year_of_study, teach_skill, learn_skill, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)");
+    if ($stmtU) {
+      foreach ($starterUsers as $su) {
+        $chkU = $conn->query("SELECT id FROM users WHERE email = '" . $conn->real_escape_string($su[1]) . "' OR name = '" . $conn->real_escape_string($su[0]) . "' LIMIT 1");
+        if (!$chkU || $chkU->num_rows === 0) {
+          $stmtU->bind_param("ssssssss", $su[0], $su[1], $su[2], $defaultHash, $su[3], $su[4], $su[5], $su[6]);
+          $stmtU->execute();
+        }
+      }
+      $stmtU->close();
+    }
+
+    // 2. Seed 3 Peer Teaching Sessions
+    $d1 = date('Y-m-d', strtotime('+3 days'));
+    $d2 = date('Y-m-d', strtotime('+5 days'));
+    $d3 = date('Y-m-d', strtotime('+7 days'));
+    $starterSessions = [
+      ['Aarav Deshmukh', 'Full-Stack Web Dev Crash Course (React + PHP)', 'Web Development', 'Hands-on peer workshop covering frontend components, REST APIs, and connecting PHP & MySQL backends.', $d1, '4:30 PM', 90, 'Online', 'https://meet.google.com/sc-webdev-mit', 25, 1],
+      ['Sneha Kulkarni', 'DSA Graph & Tree Algorithms Problem Solving', 'Data Structures & Algorithms', 'Live coding and placement-focused walkthrough of BFS, DFS, Dijkstra, and Tree DP questions.', $d2, '5:00 PM', 60, 'Campus', 'CSE Lab 2, Main Building (2nd Floor)', 20, 1],
+      ['Rohan Patil', 'Python for Data Science & Machine Learning', 'Python & ML', 'Practical session on NumPy, Pandas, data cleaning, and training your first Scikit-learn model.', $d3, '3:30 PM', 75, 'Online', 'https://meet.google.com/sc-python-ml', 30, 0]
+    ];
+    $stmtS = $conn->prepare("INSERT INTO peer_sessions (host_name, title, skill_topic, description, session_date, session_time, duration_mins, mode, location_link, max_seats, status, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?)");
+    if ($stmtS) {
+      foreach ($starterSessions as $ss) {
+        $stmtS->bind_param("ssssssissii", $ss[0], $ss[1], $ss[2], $ss[3], $ss[4], $ss[5], $ss[6], $ss[7], $ss[8], $ss[9], $ss[10]);
+        $stmtS->execute();
+      }
+      $stmtS->close();
+    }
+
+    // 3. Seed 2 College Announcements
+    $dl1 = date('Y-m-d', strtotime('+6 days'));
+    $dl2 = date('Y-m-d', strtotime('+10 days'));
+    $starterAnnouncements = [
+      ['TCS Digital & Ninja Campus Recruitment Drive 2026', 'Final Year (BE/B.Tech all branches) students with 60%+ aggregate can register for the upcoming TCS Campus Drive. Aptitude and coding test in Main Auditorium.', 'Placements', 'https://www.tcs.com/careers', $dl1, 1],
+      ['Smart India Hackathon (SIH) Internal Shortlisting', 'Form teams of 6 students (at least 1 female member mandatory) and submit your problem statement presentation to the MIT CSN Innovation Cell.', 'Hackathons', 'https://www.sih.gov.in', $dl2, 1]
+    ];
+    $stmtA = $conn->prepare("INSERT INTO announcements (title, body, category, link, deadline, pinned) VALUES (?, ?, ?, ?, ?, ?)");
+    if ($stmtA) {
+      foreach ($starterAnnouncements as $sa) {
+        $stmtA->bind_param("sssssi", $sa[0], $sa[1], $sa[2], $sa[3], $sa[4], $sa[5]);
+        $stmtA->execute();
+      }
+      $stmtA->close();
+    }
+
+    // 4. Seed 2 Help Desk Posts (help_posts)
+    $starterHelp = [
+      ['Aarav Deshmukh', 'teammates', 'Need 2 teammates for Smart India Hackathon (Frontend + ML)', 'We are building an AI crop disease detector for SIH 2026. Looking for a Python/ML developer and a UI designer from MIT CSN.'],
+      ['Sneha Kulkarni', 'help', 'Need help debugging PHP & MySQL query in XAMPP', 'Working on a college database mini-project and need 15 minutes of help optimizing a JOIN query and fixing form validation.']
+    ];
+    $stmtH = $conn->prepare("INSERT INTO help_posts (author_name, type, title, details, status) VALUES (?, ?, ?, ?, 'open')");
+    if ($stmtH) {
+      foreach ($starterHelp as $sh) {
+        $stmtH->bind_param("ssss", $sh[0], $sh[1], $sh[2], $sh[3]);
+        $stmtH->execute();
+      }
+      $stmtH->close();
+    }
+  }
 }
 
 if (isset($conn) && ($conn instanceof mysqli)) {
