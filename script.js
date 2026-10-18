@@ -233,7 +233,7 @@ function showToast(message, isError) {
 }
 
 function ajaxAction(url, formData, onSuccess) {
-  fetch(url, { method: "POST", body: formData })
+  fetch(url, { method: "POST", headers: { "X-Requested-With": "XMLHttpRequest" }, body: formData })
     .then(function (response) { return response.json(); })
     .then(function (data) {
       showToast(data.message, !data.success);
@@ -321,34 +321,117 @@ if (adminSearchInput) {
   });
 })();
 
+// Inline Email OTP Verification during Profile Creation (profile.php)
+const sendSignupOtpBtn = document.getElementById("sendSignupOtpBtn");
+const verifySignupOtpBtn = document.getElementById("verifySignupOtpBtn");
+const signupEmailInput = document.getElementById("email");
+const signupNameInput = document.getElementById("name");
+const signupOtpInput = document.getElementById("signup_otp");
+const signupOtpBadge = document.getElementById("signupOtpStatusBadge");
+const signupOtpHelper = document.getElementById("signupOtpHelperText");
 
-/* Admin Password Modal Handling */
-const openAdminModalBtn = document.getElementById("openAdminModalBtn");
-const adminPasswordModal = document.getElementById("adminPasswordModal");
-const closeAdminModalBtn = document.getElementById("closeAdminModalBtn");
-const cancelAdminModalBtn = document.getElementById("cancelAdminModalBtn");
-const homeAdminPassword = document.getElementById("homeAdminPassword");
-
-if (openAdminModalBtn && adminPasswordModal) {
-  openAdminModalBtn.addEventListener("click", function (e) {
-    e.preventDefault();
-    adminPasswordModal.style.display = "flex";
-    if (homeAdminPassword) {
-      setTimeout(function () { homeAdminPassword.focus(); }, 100);
+if (sendSignupOtpBtn && signupEmailInput) {
+  sendSignupOtpBtn.addEventListener("click", function () {
+    const emailVal = signupEmailInput.value.trim();
+    const nameVal = signupNameInput ? signupNameInput.value.trim() : "";
+    if (!emailVal || !emailVal.includes("@")) {
+      showToast("Please enter a valid email address first.", true);
+      signupEmailInput.focus();
+      return;
     }
+    sendSignupOtpBtn.disabled = true;
+    sendSignupOtpBtn.textContent = "Sending...";
+    const fd = new FormData();
+    fd.append("email", emailVal);
+    fd.append("name", nameVal);
+
+    fetch("send_signup_otp.php", {
+      method: "POST",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      body: fd
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        showToast(data.message, !data.success);
+        if (data.success) {
+          if (signupOtpBadge) {
+            signupOtpBadge.textContent = "OTP Sent — Enter Code";
+            signupOtpBadge.style.background = "#e0f2fe";
+            signupOtpBadge.style.color = "#0369a1";
+          }
+          if (signupOtpHelper) {
+            signupOtpHelper.textContent = data.message + " Enter the 6-digit code above and click Verify OTP.";
+            signupOtpHelper.style.color = "var(--accent-dark)";
+          }
+          if (signupOtpInput) signupOtpInput.focus();
+          let sec = 30;
+          const t = setInterval(function () {
+            sec--;
+            if (sec <= 0) {
+              clearInterval(t);
+              sendSignupOtpBtn.disabled = false;
+              sendSignupOtpBtn.textContent = "↻ Resend OTP";
+            } else {
+              sendSignupOtpBtn.textContent = "Resend (" + sec + "s)";
+            }
+          }, 1000);
+        } else {
+          sendSignupOtpBtn.disabled = false;
+          sendSignupOtpBtn.textContent = "📩 Send OTP";
+        }
+      })
+      .catch(function () {
+        sendSignupOtpBtn.disabled = false;
+        sendSignupOtpBtn.textContent = "📩 Send OTP";
+        showToast("Could not send OTP. Please try again.", true);
+      });
   });
 }
 
-function hideAdminModal() {
-  if (adminPasswordModal) {
-    adminPasswordModal.style.display = "none";
-  }
-}
+if (verifySignupOtpBtn && signupOtpInput && signupEmailInput) {
+  verifySignupOtpBtn.addEventListener("click", function () {
+    const emailVal = signupEmailInput.value.trim();
+    const otpVal = signupOtpInput.value.trim();
+    if (!otpVal || otpVal.length !== 6) {
+      showToast("Please enter the 6-digit OTP code.", true);
+      signupOtpInput.focus();
+      return;
+    }
+    verifySignupOtpBtn.disabled = true;
+    verifySignupOtpBtn.textContent = "Checking...";
+    const fd = new FormData();
+    fd.append("email", emailVal);
+    fd.append("otp", otpVal);
 
-if (closeAdminModalBtn) closeAdminModalBtn.addEventListener("click", hideAdminModal);
-if (cancelAdminModalBtn) cancelAdminModalBtn.addEventListener("click", hideAdminModal);
-if (adminPasswordModal) {
-  adminPasswordModal.addEventListener("click", function (e) {
-    if (e.target === adminPasswordModal) hideAdminModal();
+    fetch("verify_signup_otp.php", {
+      method: "POST",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      body: fd
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        showToast(data.message, !data.success);
+        verifySignupOtpBtn.disabled = false;
+        if (data.success) {
+          verifySignupOtpBtn.textContent = "✓ Verified";
+          verifySignupOtpBtn.style.background = "#166534";
+          if (signupOtpBadge) {
+            signupOtpBadge.textContent = "✓ Email Verified by OTP";
+            signupOtpBadge.style.background = "#dcfce7";
+            signupOtpBadge.style.color = "#166534";
+          }
+          if (signupOtpHelper) {
+            signupOtpHelper.textContent = "✓ Your email has been verified! Fill in the remaining details and click Create Verified Profile.";
+            signupOtpHelper.style.color = "#166534";
+          }
+        } else {
+          verifySignupOtpBtn.textContent = "✓ Verify OTP";
+        }
+      })
+      .catch(function () {
+        verifySignupOtpBtn.disabled = false;
+        verifySignupOtpBtn.textContent = "✓ Verify OTP";
+        showToast("Verification error. Please try again.", true);
+      });
   });
 }

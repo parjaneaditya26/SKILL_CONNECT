@@ -98,16 +98,7 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
     <div class="admin-toolbar">
       <div class="admin-toolbar-left">
         <a href="admin_announcements.php" class="connectBtn" style="text-decoration:none;">📢 + Post Announcement</a>
-        <a href="peer_sessions.php" class="btn-outline">🎓 + Schedule Peer Session</a>
-        <form class="ajax-form inline-form" action="admin_user_action.php" method="POST">
-          <?php echo csrf_field(); ?>
-          <input type="hidden" name="action" value="verify_all">
-          <button type="submit" class="btn-outline">✓ Verify All Students</button>
-        </form>
-        <form class="ajax-form inline-form" action="admin_seed_demo.php" method="POST">
-          <?php echo csrf_field(); ?>
-          <button type="submit" class="btn-outline" title="Populate sample MIT CSN students, connections, and posts">✨ Load Sample Campus Data</button>
-        </form>
+        <a href="#sessions-section" class="btn-outline" onclick="var d=document.getElementById('adminHostSessionDetails'); if(d){d.open=true; setTimeout(function(){var t=document.getElementById('admin_session_title'); if(t)t.focus();},100);}">🎓 + Schedule Peer Session</a>
       </div>
       <div class="admin-toolbar-right">
         <a href="export_users.php" class="btn-outline">⬇ Export Users CSV</a>
@@ -221,7 +212,7 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
             <?php } ?>
           </div>
         <?php } else { ?>
-          <p class="announce-meta">No student profiles yet. Click "✨ Load Sample Campus Data" above to populate demo profiles.</p>
+          <p class="announce-meta">No student profiles registered yet.</p>
         <?php } ?>
       </div>
 
@@ -348,12 +339,7 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
                     <?php } ?>
                   </td>
                   <td class="action-cell">
-                    <form class="ajax-form inline-form" action="admin_user_action.php" method="POST">
-                      <?php echo csrf_field(); ?>
-                      <input type="hidden" name="id" value="<?php echo $u['id']; ?>">
-                      <input type="hidden" name="action" value="toggle_verify">
-                      <button type="submit" class="admin-mini-btn"><?php echo $u['verified'] ? 'Unverify' : '✓ Verify'; ?></button>
-                    </form>
+
                     <form action="admin_delete_user.php" method="POST" class="inline-form" onsubmit="return confirm('Delete this user?');">
                       <input type="hidden" name="id" value="<?php echo $u['id']; ?>">
                       <button type="submit" class="admin-delete-btn">Delete</button>
@@ -362,7 +348,7 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
                 </tr>
               <?php } ?>
             <?php } else { ?>
-              <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No student profiles yet. Click "✨ Load Sample Campus Data" in the top bar!</td></tr>
+              <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No student profiles registered yet.</td></tr>
             <?php } ?>
           </tbody>
         </table>
@@ -384,6 +370,62 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
           <a href="peer_sessions.php">Open Peer Sessions Page →</a>
         </div>
       </div>
+
+      <details class="new-post" id="adminHostSessionDetails" style="margin-bottom:16px;">
+        <summary class="connectBtn">＋ Host / Schedule a Peer Teaching Session (as Admin)</summary>
+        <form class="ajax-form" action="save_peer_session.php" method="POST" style="max-width:780px; margin:14px 0 0;">
+          <?php echo csrf_field(); ?>
+          <input type="hidden" name="from_admin" value="1">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="admin_session_title">Session Title</label>
+              <input type="text" id="admin_session_title" name="title" maxlength="180" required placeholder="e.g. Campus Git & GitHub Bootcamp">
+            </div>
+            <div class="form-group">
+              <label for="admin_skill_topic">Skill / Topic</label>
+              <input type="text" id="admin_skill_topic" name="skill_topic" maxlength="100" required placeholder="e.g. Web Development, Python, DSA">
+            </div>
+            <div class="form-group">
+              <label for="admin_session_date">Date</label>
+              <input type="date" id="admin_session_date" name="session_date" value="<?php echo date('Y-m-d', strtotime('+2 days')); ?>" required>
+            </div>
+            <div class="form-group">
+              <label for="admin_session_time">Start Time</label>
+              <input type="text" id="admin_session_time" name="session_time" maxlength="30" required placeholder="e.g. 4:30 PM">
+            </div>
+            <div class="form-group">
+              <label for="admin_duration_mins">Duration</label>
+              <select id="admin_duration_mins" name="duration_mins">
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60" selected>60 minutes (1 hour)</option>
+                <option value="90">90 minutes (1.5 hours)</option>
+                <option value="120">120 minutes (2 hours)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="admin_mode">Session Mode</label>
+              <select id="admin_mode" name="mode">
+                <option value="Online">🌐 Online (Google Meet / Zoom)</option>
+                <option value="Campus">🏫 On-Campus (Lab / Classroom)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="admin_location_link">Meeting Link or Room Location</label>
+              <input type="text" id="admin_location_link" name="location_link" maxlength="400" required placeholder="e.g. https://meet.google.com/... or CSE Lab 2">
+            </div>
+            <div class="form-group">
+              <label for="admin_max_seats">Max Seats</label>
+              <input type="number" id="admin_max_seats" name="max_seats" min="2" max="200" value="30" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="admin_description">Agenda &amp; Prerequisites</label>
+            <textarea id="admin_description" name="description" maxlength="1500" required placeholder="Describe what topics will be covered and who should attend..."></textarea>
+          </div>
+          <button type="submit">Schedule Peer Session</button>
+        </form>
+      </details>
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>

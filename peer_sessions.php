@@ -61,7 +61,8 @@ if ($r1) { $totalUpcoming = intval($r1->fetch_assoc()['c']); }
 $r2 = $conn->query("SELECT COUNT(*) AS c FROM peer_session_participants");
 if ($r2) { $totalRsvps = intval($r2->fetch_assoc()['c']); }
 
-layoutStart("Peer Teaching Sessions", "Peer Teaching Sessions", "Join live student-led workshops, study circles, and hands-on skill sessions—or host your own!");
+$navMode = ($isAdmin && $currentUser === '') ? 'admin' : 'user';
+layoutStart("Peer Teaching Sessions", "Peer Teaching Sessions", "Join live student-led workshops, study circles, and hands-on skill sessions—or host your own!", $navMode);
 ?>
     <div class="dash-stats" style="margin-bottom:22px;">
       <div class="stat-box">

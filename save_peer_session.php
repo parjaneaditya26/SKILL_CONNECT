@@ -52,12 +52,25 @@ if (!$stmt) {
 }
 $stmt->bind_param("ssssssissi", $hostName, $title, $skillTopic, $description, $sessionDate, $sessionTime, $durationMins, $mode, $locationLink, $maxSeats);
 
+$targetRedirect = (!empty($_POST['from_admin'])) ? "admin.php#sessions-section" : "peer_sessions.php";
+$isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
 if ($stmt->execute()) {
   $stmt->close();
-  echo json_encode(["success" => true, "message" => "Peer teaching session scheduled!"]);
+  if (!$isAjax) {
+    $conn->close();
+    header("Location: " . $targetRedirect);
+    exit;
+  }
+  echo json_encode(["success" => true, "message" => "Peer teaching session scheduled!", "redirect" => $targetRedirect]);
 } else {
+  $err = $conn->error;
   $stmt->close();
-  echo json_encode(["success" => false, "message" => "Could not save session: " . $conn->error]);
+  if (!$isAjax) {
+    $conn->close();
+    header("Location: " . $targetRedirect);
+    exit;
+  }
+  echo json_encode(["success" => false, "message" => "Could not save session: " . $err]);
 }
 $conn->close();
 ?>

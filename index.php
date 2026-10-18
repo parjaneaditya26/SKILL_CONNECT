@@ -5,6 +5,11 @@ include "helpers.php";
 
 ensureSchema($conn);
 
+if (!empty($_SESSION["isAdmin"]) && !isset($_GET["view_site"])) {
+  header("Location: admin.php");
+  exit;
+}
+
 if (isset($_SESSION["profileName"]) && !isset($_GET["view_site"])) {
   include "dashboard.php";
   exit;
@@ -86,6 +91,6 @@ if ($result2) { $row2 = $result2->fetch_assoc(); $connectionCount = intval($row2
     <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
   <?php renderChatbot(); ?>
-  <script src="script.js"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>

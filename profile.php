@@ -26,7 +26,7 @@ $savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details a
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Profile - Skill Connect</title>
+  <title><?php echo $loggedIn ? "Edit My Profile" : "Create Your Profile"; ?> - Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-user="<?php echo $loggedIn ? htmlspecialchars($user['name']) : ''; ?>">
@@ -34,30 +34,12 @@ $savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details a
 
   <header>
     <h1><?php echo $loggedIn ? "Edit My Profile" : "Create Your Profile"; ?></h1>
-    <p><?php echo $loggedIn ? "Update your skills or contact details." : "Tell others what you can teach and what you want to learn."; ?></p>
+    <p><?php echo $loggedIn ? "Update your skills or contact details." : "Verify your email with OTP and tell classmates what you can teach and want to learn."; ?></p>
   </header>
 
-  <?php if ($loggedIn) { ?>
+  <?php if ($loggedIn && $savedBanner) { ?>
     <div class="verify-wrap">
-      <?php if ($savedBanner) { ?>
-        <div class="notice" style="background:#e6f0e2; border-color:#b7d9ad; color:#2b5423; margin-bottom:14px;">✓ <?php echo h($savedBanner); ?></div>
-      <?php } ?>
-      <?php if ($user['verified']) { ?>
-        <p style="color:var(--accent-dark); font-weight:600; font-size:0.88rem;">✓ Email Verified</p>
-      <?php } else { ?>
-        <div class="empty-state" style="max-width:none; margin:0; padding:20px; text-align:left;">
-          <h3 style="color:#b45309; font-size:1rem;">Email not verified</h3>
-          <p>Step 1: we'll send a 6-digit code to <strong><?php echo htmlspecialchars($user['email']); ?></strong></p>
-          <form action="resend_verification.php" method="POST" class="ajax-form inline-form" data-no-reload="1" style="margin:8px 0 0;">
-            <button type="submit" style="width:100%;">Send verification code</button>
-          </form>
-          <p style="margin-top:16px;">Step 2: enter the code from your email</p>
-          <form action="verify_otp_ajax.php" method="POST" class="ajax-form inline-form" style="margin:8px 0 0;">
-            <input type="text" name="otp" maxlength="6" pattern="[0-9]{6}" placeholder="123456" required style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; font-size:1rem; letter-spacing:3px;">
-            <button type="submit" style="width:100%;">Verify</button>
-          </form>
-        </div>
-      <?php } ?>
+      <div class="notice" style="background:#e6f0e2; border-color:#b7d9ad; color:#2b5423; margin-bottom:14px;">✓ <?php echo h($savedBanner); ?></div>
     </div>
   <?php } ?>
 
@@ -71,12 +53,42 @@ $savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details a
           placeholder="e.g. Priya Sharma"
           <?php echo $loggedIn ? "readonly" : "required"; ?>>
       </div>
+
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email"
-          value="<?php echo $loggedIn ? htmlspecialchars($user['email']) : ''; ?>"
-          placeholder="e.g. you@gmail.com" required>
+        <label for="email" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Email Address</span>
+          <?php if ($loggedIn && !empty($user['verified'])) { ?>
+            <span style="color:#166534; font-weight:700; font-size:0.82rem;">✓ Email Verified</span>
+          <?php } ?>
+        </label>
+        <?php if (!$loggedIn) { ?>
+          <div style="display:flex; gap:8px; align-items:stretch;">
+            <input type="email" id="email" name="email" placeholder="e.g. you@gmail.com" required style="flex:1; margin-bottom:0;">
+            <button type="button" id="sendSignupOtpBtn" class="btn-outline" style="white-space:nowrap; padding:10px 16px; font-weight:600; border-color:var(--accent); color:var(--accent-dark);">📩 Send OTP</button>
+          </div>
+        <?php } else { ?>
+          <input type="email" id="email" name="email"
+            value="<?php echo htmlspecialchars($user['email']); ?>"
+            placeholder="e.g. you@gmail.com" readonly>
+        <?php } ?>
       </div>
+
+      <?php if (!$loggedIn) { ?>
+        <div class="form-group" id="signupOtpBox" style="background:var(--bg-soft); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label for="signup_otp" style="margin:0; font-size:0.88rem;">🔑 Verify Email by OTP (6-Digit Code)</label>
+            <span id="signupOtpStatusBadge" style="font-size:0.78rem; font-weight:700; padding:3px 10px; border-radius:999px; background:#fef3c7; color:#92400e;">Step 1: Send &amp; Verify OTP</span>
+          </div>
+          <div style="display:flex; gap:8px; align-items:stretch;">
+            <input type="text" id="signup_otp" name="signup_otp" maxlength="6" pattern="[0-9]{6}" placeholder="Enter 6-digit OTP" required style="flex:1; margin-bottom:0; letter-spacing:4px; font-weight:700; font-size:1rem;">
+            <button type="button" id="verifySignupOtpBtn" class="connectBtn" style="white-space:nowrap; padding:10px 18px; margin:0;">✓ Verify OTP</button>
+          </div>
+          <p id="signupOtpHelperText" style="margin:8px 0 0; font-size:0.82rem; color:var(--text-muted);">
+            Enter your email above and click <strong>📩 Send OTP</strong>, then enter the 6-digit code to verify your email.
+          </p>
+        </div>
+      <?php } ?>
+
       <div class="form-group">
         <label for="mobile">Mobile Number</label>
         <input type="tel" id="mobile" name="mobile"
@@ -99,7 +111,7 @@ $savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details a
           <option value="">-- Select your branch --</option>
           <?php foreach ($branches as $b) {
             $sel = ($loggedIn && $user['branch'] == $b) ? "selected" : "";
-            echo "<option value=\"$b\" $sel>$b</option>";
+            echo '<option value="' . htmlspecialchars($b) . '" ' . $sel . '>' . htmlspecialchars($b) . '</option>';
           } ?>
         </select>
       </div>
@@ -109,7 +121,7 @@ $savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details a
           <option value="">-- Select your year --</option>
           <?php foreach ($years as $y) {
             $sel = ($loggedIn && $user['year_of_study'] == $y) ? "selected" : "";
-            echo "<option value=\"$y\" $sel>$y</option>";
+            echo '<option value="' . htmlspecialchars($y) . '" ' . $sel . '>' . htmlspecialchars($y) . '</option>';
           } ?>
         </select>
       </div>
@@ -125,7 +137,7 @@ $savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details a
           value="<?php echo ($loggedIn && $user['learn_skill'] != 'Nothing yet') ? htmlspecialchars($user['learn_skill']) : ''; ?>"
           placeholder="e.g. Machine Learning, Figma (comma-separated, optional)">
       </div>
-      <button type="submit"><?php echo $loggedIn ? "Save Changes" : "Create Profile"; ?></button>
+      <button type="submit" id="createProfileSubmitBtn"><?php echo $loggedIn ? "Save Changes" : "Create Verified Profile"; ?></button>
     </form>
 
     <?php if (!$loggedIn) { ?>

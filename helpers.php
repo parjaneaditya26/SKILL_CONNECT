@@ -125,6 +125,16 @@ function ensureSchema($conn) {
     'Python for Data Science & Machine Learning',
     'UI/UX Prototyping in Figma for Hackathons'
   )");
+
+  // Clean up any previously loaded sample @mit.asia demo profiles
+  $conn->query("DELETE FROM users WHERE email IN (
+    'aarav.deshmukh@mit.asia',
+    'sneha.kulkarni@mit.asia',
+    'rohan.patil@mit.asia',
+    'priya.sharma@mit.asia',
+    'aditya.joshi@mit.asia',
+    'ananya.more@mit.asia'
+  )");
 }
 
 if (isset($conn) && ($conn instanceof mysqli)) {
@@ -301,6 +311,11 @@ function siteNav($currentUser = '') {
         <a href="requests.php" class="nav-link">📬 My Requests</a>
         <a href="connections.php" class="nav-link">💬 My Connections</a>
         <a href="logout.php" class="nav-link" style="margin-top:10px; border-top:1px solid var(--border); padding-top:12px; color:var(--danger); font-weight:600;">🚪 Logout (<?php echo h($currentUser); ?>)</a>
+      <?php } elseif (!empty($_SESSION['isAdmin'])) { ?>
+        <a href="admin.php" class="nav-link" style="font-weight:700; color:var(--accent-dark);">🛡️ Back to Admin Dashboard</a>
+        <a href="peer_sessions.php" class="nav-link">🎓 Peer Sessions</a>
+        <a href="admin_announcements.php" class="nav-link">📢 Announcements</a>
+        <a href="admin_logout.php" class="nav-link" style="margin-top:10px; border-top:1px solid var(--border); padding-top:12px; color:var(--danger); font-weight:600;">🚪 Admin Logout</a>
       <?php } else { ?>
         <a href="profile.php" class="nav-link">✨ Create Profile</a>
         <a href="login.php" class="nav-link">🔑 Student Login</a>
@@ -375,6 +390,10 @@ function renderChatbot() {
 
 function layoutStart($title, $heading, $subtitle = '', $mode = 'user') {
   $currentUser = (isset($_SESSION['profileName'])) ? $_SESSION['profileName'] : '';
+  $scriptName = basename($_SERVER['PHP_SELF'] ?? '');
+  if ($mode === 'user' && $currentUser === '' && !empty($_SESSION['isAdmin']) && !in_array($scriptName, ['login.php', 'profile.php'], true)) {
+    $mode = 'admin';
+  }
   ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -402,7 +421,7 @@ function layoutEnd($mode = 'user') {
     <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
   <?php renderChatbot(); ?>
-  <script src="script.js"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
 <?php
