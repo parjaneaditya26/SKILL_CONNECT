@@ -4,8 +4,7 @@ include 'db_connect.php';
 include 'helpers.php';
 
 if (!isset($_SESSION['profileName'])) {
-  header("Location: login.php");
-  exit;
+  renderLoginRequired("Messages", "Log in to chat with your connections.");
 }
 
 $currentUser = $_SESSION['profileName'];
@@ -15,46 +14,21 @@ $cu = $conn->real_escape_string($currentUser);
 $wu = $conn->real_escape_string($withUser);
 
 $connectionCheck = $conn->query("SELECT id FROM requests WHERE status='accepted' AND ((requester_name='$cu' AND target_name='$wu') OR (requester_name='$wu' AND target_name='$cu'))");
-if ($connectionCheck->num_rows == 0) {
-  echo "<p>You can only message people you're connected with.</p>";
-  echo "<a href='connections.php'>Back to My Connections</a>";
+if (!$connectionCheck || $connectionCheck->num_rows == 0) {
+  layoutStart("Messages", "Direct Messages", "You can only message people you're connected with.");
+  echo '<div class="empty-state"><h3>Not connected yet</h3><p>Send and accept a connection request first to start messaging.</p><a href="connections.php" class="connectBtn" style="display:inline-block; text-decoration:none; margin-top:12px;">Back to My Connections</a></div>';
+  layoutEnd();
   exit;
 }
 
 $messages = $conn->query("SELECT * FROM messages WHERE (sender_name='$cu' AND receiver_name='$wu') OR (sender_name='$wu' AND receiver_name='$cu') ORDER BY created_at ASC");
-$csrf = csrf_token();
+
+layoutStart("Chat with " . $withUser, "Chat with " . $withUser, "Coordinate your skill swap or study session.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chat with <?php echo htmlspecialchars($withUser); ?> - Skill Connect</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body data-user="<?php echo htmlspecialchars($currentUser); ?>">
-  <nav>
-    <a href="index.php" class="logo-link">
-      <span class="logo-badge">SC</span>
-      <span class="logo-text">Skill<strong>Connect</strong></span>
-    </a>
-    <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <a href="profile.php" class="nav-link">My Profile</a>
-      <a href="browse.php" class="nav-link">Browse Skills</a>
-      <a href="announcements.php" class="nav-link">Announcements</a>
-      <a href="help_board.php" class="nav-link">Help Board</a>
-      <a href="requests.php" class="nav-link">My Requests</a>
-      <a href="connections.php" class="nav-link">My Connections</a>
-      <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
-    </div>
-  </nav>
-  <header>
-    <h1>Chat with <?php echo htmlspecialchars($withUser); ?></h1>
-  </header>
-  <main>
-    <div style="max-width:720px; margin:0; background:white; border-radius:14px; border:1px solid var(--border); padding:20px; text-align:left;">
-      <?php if ($messages->num_rows > 0) { ?>
+    <p style="margin-bottom:14px;"><a href="connections.php" class="btn-outline">← Back to My Connections</a></p>
+
+    <div style="max-width:720px; margin:0; background:white; border-radius:14px; border:1px solid var(--border); padding:20px; text-align:left; max-height:420px; overflow-y:auto;">
+      <?php if ($messages && $messages->num_rows > 0) { ?>
         <?php while ($m = $messages->fetch_assoc()) { ?>
           <?php $isMine = ($m['sender_name'] == $currentUser); ?>
           <div style="margin-bottom:12px; text-align:<?php echo $isMine ? 'right' : 'left'; ?>;">
@@ -76,23 +50,6 @@ $csrf = csrf_token();
         <label for="message">Message</label>
         <input type="text" id="message" name="message" placeholder="Type a message..." required maxlength="500">
       </div>
-      <button type="submit">Send</button>
+      <button type="submit">Send Message</button>
     </form>
-  </main>
-  <footer>
-    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-  </footer>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>

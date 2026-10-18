@@ -1,11 +1,14 @@
 <?php
 session_start();
-if (!isset($_SESSION['isAdmin'])) {
+if (empty($_SESSION["isAdmin"])) {
   header("Location: admin_login.php");
   exit;
 }
+
 include 'db_connect.php';
 include 'helpers.php';
+
+ensureSchema($conn);
 
 $categories = announcementCategories();
 $list = $conn->query("SELECT a.*, DATEDIFF(a.deadline, CURDATE()) AS days_left, (SELECT COUNT(*) FROM announcement_interest i WHERE i.announcement_id = a.id) AS interested FROM announcements a ORDER BY a.pinned DESC, a.created_at DESC, a.id DESC");
@@ -41,15 +44,15 @@ layoutStart("Manage Announcements", "Manage Announcements", "Post notices that e
       <button type="submit">Post announcement</button>
     </form>
 
-    <h2 class="section-title">Posted announcements (<?php echo $list->num_rows; ?>)</h2>
+    <h2 class="section-title">Posted announcements (<?php echo $list ? $list->num_rows : 0; ?>)</h2>
     <div class="admin-table-wrap">
       <table class="admin-table">
         <tr><th>Title</th><th>Category</th><th>Deadline</th><th>Interested</th><th>Posted</th><th>Actions</th></tr>
-        <?php while ($a = $list->fetch_assoc()) { $info = deadlineInfo($a['days_left']); ?>
+        <?php if ($list) { while ($a = $list->fetch_assoc()) { $info = deadlineInfo($a['days_left']); ?>
           <tr>
             <td><?php echo $a['pinned'] ? '📌 ' : ''; ?><?php echo h($a['title']); ?></td>
             <td><?php echo h($a['category']); ?></td>
-            <td><?php echo $a['deadline'] ? h($a['deadline']) . ' (' . h($info[0]) . ')' : '—'; ?></td>
+            <td><?php echo $a['deadline'] ? h($a['deadline']) . ($info ? ' (' . h($info[0]) . ')' : '') : '—'; ?></td>
             <td><?php echo $a['interested']; ?></td>
             <td><?php echo timeAgo($a['created_at']); ?></td>
             <td class="action-cell">
@@ -67,7 +70,7 @@ layoutStart("Manage Announcements", "Manage Announcements", "Post notices that e
               </form>
             </td>
           </tr>
-        <?php } ?>
+        <?php } } ?>
       </table>
     </div>
 <?php layoutEnd('admin'); ?>

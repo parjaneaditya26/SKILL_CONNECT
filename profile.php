@@ -9,7 +9,7 @@ $user = null;
 if ($loggedIn) {
   $name = $_SESSION['profileName'];
   $result = $conn->query("SELECT * FROM users WHERE name = '" . $conn->real_escape_string($name) . "'");
-  if ($result->num_rows > 0) {
+  if ($result && $result->num_rows > 0) {
     $user = $result->fetch_assoc();
   } else {
     session_destroy();
@@ -19,6 +19,7 @@ if ($loggedIn) {
 
 $branches = ["Computer Engineering","Information Technology","Mechanical Engineering","Civil Engineering","Electronics & Telecommunication","Electrical Engineering","Other"];
 $years = ["FY","SY","TY","Final Year"];
+$savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details are up to date." : "";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,27 +30,7 @@ $years = ["FY","SY","TY","Final Year"];
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-user="<?php echo $loggedIn ? htmlspecialchars($user['name']) : ''; ?>">
-  <nav>
-    <a href="index.php" class="logo-link">
-      <span class="logo-badge">SC</span>
-      <span class="logo-text">Skill<strong>Connect</strong></span>
-    </a>
-    <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <?php if ($loggedIn) { ?>
-        <a href="profile.php" class="nav-link">My Profile</a>
-        <a href="browse.php" class="nav-link">Browse Skills</a>
-        <a href="announcements.php" class="nav-link">Announcements</a>
-        <a href="help_board.php" class="nav-link">Help Board</a>
-        <a href="requests.php" class="nav-link">My Requests</a>
-        <a href="connections.php" class="nav-link">My Connections</a>
-        <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($user['name']); ?>)</a>
-      <?php } else { ?>
-        <a href="profile.php" class="nav-link">Create Profile</a>
-        <a href="login.php" class="nav-link">Login</a>
-      <?php } ?>
-    </div>
-  </nav>
+  <?php siteNav($loggedIn ? $user['name'] : ''); ?>
 
   <header>
     <h1><?php echo $loggedIn ? "Edit My Profile" : "Create Your Profile"; ?></h1>
@@ -58,6 +39,9 @@ $years = ["FY","SY","TY","Final Year"];
 
   <?php if ($loggedIn) { ?>
     <div class="verify-wrap">
+      <?php if ($savedBanner) { ?>
+        <div class="notice" style="background:#e6f0e2; border-color:#b7d9ad; color:#2b5423; margin-bottom:14px;">✓ <?php echo h($savedBanner); ?></div>
+      <?php } ?>
       <?php if ($user['verified']) { ?>
         <p style="color:var(--accent-dark); font-weight:600; font-size:0.88rem;">✓ Email Verified</p>
       <?php } else { ?>
@@ -133,13 +117,13 @@ $years = ["FY","SY","TY","Final Year"];
         <label for="teachSkill">Skills You Can Teach</label>
         <input type="text" id="teachSkill" name="teachSkill"
           value="<?php echo ($loggedIn && $user['teach_skill'] != 'Nothing yet') ? htmlspecialchars($user['teach_skill']) : ''; ?>"
-          placeholder="e.g. Guitar, Piano, Singing (comma-separated, optional)">
+          placeholder="e.g. Python, React, DSA (comma-separated, optional)">
       </div>
       <div class="form-group">
         <label for="learnSkill">Skills You Want to Learn</label>
         <input type="text" id="learnSkill" name="learnSkill"
           value="<?php echo ($loggedIn && $user['learn_skill'] != 'Nothing yet') ? htmlspecialchars($user['learn_skill']) : ''; ?>"
-          placeholder="e.g. Photography, Cooking (comma-separated, optional)">
+          placeholder="e.g. Machine Learning, Figma (comma-separated, optional)">
       </div>
       <button type="submit"><?php echo $loggedIn ? "Save Changes" : "Create Profile"; ?></button>
     </form>
@@ -164,22 +148,4 @@ $years = ["FY","SY","TY","Final Year"];
         </form>
       </div>
     <?php } ?>
-  </main>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
-  <footer>
-    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-    <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
-  </footer>
-</body>
-</html>
+<?php layoutEnd(); ?>

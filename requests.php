@@ -4,98 +4,29 @@ include 'db_connect.php';
 include 'helpers.php';
 
 if (!isset($_SESSION['profileName'])) {
-  ?>
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Requests - Skill Connect</title>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body data-user="">
-    <nav>
-      <a href="index.php" class="logo-link">
-        <span class="logo-badge">SC</span>
-        <span class="logo-text">Skill<strong>Connect</strong></span>
-      </a>
-      <div class="nav-links">
-        <a href="index.php" class="nav-link">Home</a>
-        <a href="profile.php" class="nav-link">Create Profile</a>
-        <a href="login.php" class="nav-link">Login</a>
-      </div>
-    </nav>
-    <header>
-      <h1>My Requests</h1>
-      <p>Log in to see your connection requests.</p>
-    </header>
-    <main>
-      <div class="empty-state">
-        <h3>Please log in</h3>
-        <p>You need to be logged in to view your requests.</p>
-        <a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none; margin-top:12px;">Log In</a>
-      </div>
-    </main>
-    <footer>
-      <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-    </footer>
-  </body>
-  </html>
-  <?php
-  exit;
+  renderLoginRequired("My Requests", "Log in to see your incoming and outgoing connection requests.");
 }
 
 $currentUser = $_SESSION['profileName'];
 $view = isset($_GET['view']) ? $_GET['view'] : "received";
 $cu = $conn->real_escape_string($currentUser);
-$csrf = csrf_token();
 
 if ($view == "sent") {
-  $sql = "SELECT * FROM requests WHERE requester_name = '$cu'";
+  $sql = "SELECT * FROM requests WHERE requester_name = '$cu' ORDER BY id DESC";
 } else {
-  $sql = "SELECT * FROM requests WHERE target_name = '$cu'";
+  $sql = "SELECT * FROM requests WHERE target_name = '$cu' ORDER BY id DESC";
 }
 $result = $conn->query($sql);
+
+layoutStart("My Requests", "My Requests", "See who wants to connect with you, or requests you've sent.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>My Requests - Skill Connect</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body data-user="<?php echo htmlspecialchars($currentUser); ?>">
-
-  <nav>
-    <a href="index.php" class="logo-link">
-      <span class="logo-badge">SC</span>
-      <span class="logo-text">Skill<strong>Connect</strong></span>
-    </a>
-    <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <a href="profile.php" class="nav-link">My Profile</a>
-      <a href="browse.php" class="nav-link">Browse Skills</a>
-      <a href="announcements.php" class="nav-link">Announcements</a>
-      <a href="help_board.php" class="nav-link">Help Board</a>
-      <a href="requests.php" class="nav-link">My Requests</a>
-      <a href="connections.php" class="nav-link">My Connections</a>
-      <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
-    </div>
-  </nav>
-
-  <header>
-    <h1>My Requests</h1>
-    <p>See who wants to connect with you, or requests you've sent.</p>
-  </header>
-
-  <main>
     <div class="tabs">
       <a href="requests.php?view=received" class="tab <?php echo ($view == 'received') ? 'active' : ''; ?>">Received</a>
       <a href="requests.php?view=sent" class="tab <?php echo ($view == 'sent') ? 'active' : ''; ?>">Sent</a>
     </div>
 
     <div class="skill-list">
-      <?php if ($result->num_rows > 0) { ?>
+      <?php if ($result && $result->num_rows > 0) { ?>
         <?php while ($row = $result->fetch_assoc()) { ?>
           <?php
           $otherName = ($view == "received") ? $row['requester_name'] : $row['target_name'];
@@ -162,23 +93,4 @@ $result = $conn->query($sql);
         </div>
       <?php } ?>
     </div>
-  </main>
-
-  <footer>
-    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-    <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
-  </footer>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>

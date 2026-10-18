@@ -10,7 +10,7 @@ $success = false;
 $t = $conn->real_escape_string($token);
 $result = $conn->query("SELECT * FROM users WHERE reset_token = '$t' AND reset_expires > NOW()");
 
-if ($t == "" || $result->num_rows == 0) {
+if ($t == "" || !$result || $result->num_rows == 0) {
   $error = "This reset link is invalid or has expired.";
 } else {
   $user = $result->fetch_assoc();
@@ -29,33 +29,11 @@ if ($t == "" || $result->num_rows == 0) {
     }
   }
 }
+
+layoutStart("Reset Password", "Reset Password", "Choose a new password.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Reset Password - Skill Connect</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body data-user="">
-  <nav>
-    <a href="index.php" class="logo-link">
-      <span class="logo-badge">SC</span>
-      <span class="logo-text">Skill<strong>Connect</strong></span>
-    </a>
-    <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <a href="login.php" class="nav-link">Login</a>
-    </div>
-  </nav>
-  <header>
-    <h1>Reset Password</h1>
-    <p>Choose a new password.</p>
-  </header>
-  <main>
     <?php if ($error) { ?>
-      <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+      <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo h($error); ?></p>
     <?php } elseif ($success) { ?>
       <p style="color:var(--accent); text-align:center; margin-bottom:16px; font-weight:600;">Password updated! You can now log in.</p>
       <p style="text-align:center;"><a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none;">Go to Login</a></p>
@@ -73,21 +51,4 @@ if ($t == "" || $result->num_rows == 0) {
         <button type="submit">Update Password</button>
       </form>
     <?php } ?>
-  </main>
-  <footer>
-    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-  </footer>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>

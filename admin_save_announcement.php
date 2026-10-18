@@ -1,15 +1,17 @@
 <?php
 session_start();
+if (empty($_SESSION["isAdmin"])) {
+  echo json_encode(["success" => false, "message" => "Admin authentication required. Please log in with admin password."]);
+  exit;
+}
+
 include 'db_connect.php';
 include 'helpers.php';
 @include 'mailer.php';
 
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['isAdmin'])) {
-  echo json_encode(["success" => false, "message" => "Admin login required."]);
-  exit;
-}
+ensureSchema($conn);
 
 if (!csrf_verify($_POST['csrf_token'] ?? '')) {
   echo json_encode(["success" => false, "message" => "Security check failed."]);
@@ -57,6 +59,10 @@ if ($deadlineIn !== '') {
 }
 
 $stmt = $conn->prepare("INSERT INTO announcements (title, body, category, link, deadline, pinned) VALUES (?, ?, ?, ?, ?, ?)");
+if (!$stmt) {
+  echo json_encode(["success" => false, "message" => "Database error: " . $conn->error]);
+  exit;
+}
 $stmt->bind_param("sssssi", $title, $body, $category, $linkVal, $deadlineVal, $pinned);
 if (!$stmt->execute()) {
   echo json_encode(["success" => false, "message" => "Could not save: " . $conn->error]);
@@ -71,7 +77,7 @@ if ($notify) {
     set_time_limit(120);
     $emails = [];
     $res = $conn->query("SELECT email FROM users WHERE verified = 1 AND email <> ''");
-    while ($r = $res->fetch_assoc()) { $emails[] = $r['email']; }
+    if ($res) { while ($r = $res->fetch_assoc()) { $emails[] = $r['email']; } }
 
     if (count($emails) == 0) {
       $message .= " No verified students to email yet.";

@@ -3,6 +3,8 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 include_once 'db_connect.php';
 include_once 'helpers.php';
 
+ensureSchema($conn);
+
 if (!isset($_SESSION['profileName'])) {
   header("Location: index.php");
   exit;
@@ -10,11 +12,15 @@ if (!isset($_SESSION['profileName'])) {
 
 $currentUser = $_SESSION['profileName'];
 
+$me = null;
 $s = $conn->prepare("SELECT * FROM users WHERE name = ?");
-$s->bind_param("s", $currentUser);
-$s->execute();
-$me = $s->get_result()->fetch_assoc();
-$s->close();
+if ($s) {
+  $s->bind_param("s", $currentUser);
+  $s->execute();
+  $resMe = $s->get_result();
+  if ($resMe) { $me = $resMe->fetch_assoc(); }
+  $s->close();
+}
 
 if (!$me) {
   session_destroy();
@@ -22,35 +28,78 @@ if (!$me) {
   exit;
 }
 
+$pendingCount = 0;
 $s = $conn->prepare("SELECT COUNT(*) AS c FROM requests WHERE target_name = ? AND status = 'pending'");
-$s->bind_param("s", $currentUser);
-$s->execute();
-$pendingCount = $s->get_result()->fetch_assoc()['c'];
-$s->close();
+if ($s) {
+  $s->bind_param("s", $currentUser);
+  $s->execute();
+  $r = $s->get_result();
+  if ($r) { $pendingCount = intval($r->fetch_assoc()['c']); }
+  $s->close();
+}
 
+$connectionCount = 0;
 $s = $conn->prepare("SELECT COUNT(*) AS c FROM requests WHERE status = 'accepted' AND (requester_name = ? OR target_name = ?)");
-$s->bind_param("ss", $currentUser, $currentUser);
-$s->execute();
-$connectionCount = $s->get_result()->fetch_assoc()['c'];
-$s->close();
+if ($s) {
+  $s->bind_param("ss", $currentUser, $currentUser);
+  $s->execute();
+  $r = $s->get_result();
+  if ($r) { $connectionCount = intval($r->fetch_assoc()['c']); }
+  $s->close();
+}
 
+$ratingRow = ['avg_rating' => null, 'total' => 0];
 $s = $conn->prepare("SELECT AVG(rating) AS avg_rating, COUNT(*) AS total FROM ratings WHERE target_id = ?");
-$s->bind_param("i", $me['id']);
-$s->execute();
-$ratingRow = $s->get_result()->fetch_assoc();
-$s->close();
+if ($s) {
+  $s->bind_param("i", $me['id']);
+  $s->execute();
+  $r = $s->get_result();
+  if ($r) { $ratingRow = $r->fetch_assoc(); }
+  $s->close();
+}
 $avgRating = $ratingRow['avg_rating'] ? round($ratingRow['avg_rating'], 1) : null;
 
-$announcements = $conn->query("SELECT *, DATEDIFF(deadline, CURDATE()) AS days_left FROM announcements WHERE (deadline IS NULL OR deadline >= CURDATE()) ORDER BY pinned DESC, created_at DESC, id DESC LIMIT 4")->fetch_all(MYSQLI_ASSOC);
+$savedNoticeCount = 0;
+$s = $conn->prepare("SELECT COUNT(*) AS c FROM saved_announcements WHERE user_name = ?");
+if ($s) {
+  $s->bind_param("s", $currentUser);
+  $s->execute();
+  $r = $s->get_result();
+  if ($r) { $savedNoticeCount = intval($r->fetch_assoc()['c']); }
+  $s->close();
+}
 
-$helpPosts = $conn->query("SELECT p.*, u.id AS author_id FROM help_posts p LEFT JOIN users u ON u.name = p.author_name WHERE p.status = 'open' ORDER BY p.created_at DESC, p.id DESC LIMIT 3")->fetch_all(MYSQLI_ASSOC);
+$savedMap = [];
+$ss = $conn->prepare("SELECT announcement_id FROM saved_announcements WHERE user_name = ?");
+if ($ss) {
+  $ss->bind_param("s", $currentUser);
+  $ss->execute();
+  $sr = $ss->get_result();
+  if ($sr) {
+    while ($r = $sr->fetch_assoc()) { $savedMap[$r['announcement_id']] = true; }
+  }
+  $ss->close();
+}
+
+$annQuery = $conn->query("SELECT *, DATEDIFF(deadline, CURDATE()) AS days_left FROM announcements WHERE (deadline IS NULL OR deadline >= CURDATE()) ORDER BY pinned DESC, created_at DESC, id DESC LIMIT 3");
+$announcements = $annQuery ? $annQuery->fetch_all(MYSQLI_ASSOC) : [];
+
+$psQuery = $conn->query("SELECT s.*, (SELECT COUNT(*) FROM peer_session_participants p WHERE p.session_id = s.id) AS joined_count FROM peer_sessions s WHERE s.status = 'upcoming' ORDER BY s.featured DESC, s.session_date ASC LIMIT 3");
+$peerSessions = $psQuery ? $psQuery->fetch_all(MYSQLI_ASSOC) : [];
+
+$hpQuery = $conn->query("SELECT p.*, u.id AS author_id FROM help_posts p LEFT JOIN users u ON u.name = p.author_name WHERE p.status = 'open' ORDER BY p.created_at DESC, p.id DESC LIMIT 3");
+$helpPosts = $hpQuery ? $hpQuery->fetch_all(MYSQLI_ASSOC) : [];
 
 $matches = [];
+$others = [];
 $s = $conn->prepare("SELECT id, name, branch, year_of_study, teach_skill, learn_skill FROM users WHERE name <> ?");
-$s->bind_param("s", $currentUser);
-$s->execute();
-$others = $s->get_result()->fetch_all(MYSQLI_ASSOC);
-$s->close();
+if ($s) {
+  $s->bind_param("s", $currentUser);
+  $s->execute();
+  $r = $s->get_result();
+  if ($r) { $others = $r->fetch_all(MYSQLI_ASSOC); }
+  $s->close();
+}
 
 $candidates = [];
 foreach ($others as $o) {
@@ -75,7 +124,7 @@ foreach ($candidates as $c) {
 
 $helpLabels = ["teammates" => "Looking for teammates", "help" => "Needs help"];
 
-layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening on campus.");
+layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening across MIT CSN today.");
 ?>
     <?php if (!$me['verified']) { ?>
       <div class="notice">Your email isn't verified yet. <a href="profile.php">Verify it from your profile</a> to receive announcement emails.</div>
@@ -90,6 +139,14 @@ layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening on
         <div class="stat-number"><?php echo $connectionCount; ?></div>
         <div class="stat-label">Connections</div>
       </a>
+      <a class="stat-box" href="peer_sessions.php">
+        <div class="stat-number"><?php echo count($peerSessions); ?></div>
+        <div class="stat-label">Upcoming Peer Sessions</div>
+      </a>
+      <a class="stat-box" href="saved_announcements.php">
+        <div class="stat-number"><?php echo $savedNoticeCount; ?></div>
+        <div class="stat-label">Saved Notices</div>
+      </a>
       <a class="stat-box" href="profile_view.php?id=<?php echo $me['id']; ?>">
         <div class="stat-number"><?php echo $avgRating ? $avgRating . ' ★' : '—'; ?></div>
         <div class="stat-label">Your rating (<?php echo $ratingRow['total']; ?> reviews)</div>
@@ -99,12 +156,42 @@ layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening on
     <div class="dash-grid">
       <section>
         <div class="dash-section-head">
-          <h2>Latest announcements</h2>
-          <a href="announcements.php">View all →</a>
+          <h2>🎓 Upcoming Peer Teaching Sessions</h2>
+          <a href="peer_sessions.php">Explore or Host →</a>
+        </div>
+        <?php if (count($peerSessions) > 0) { ?>
+          <div class="dash-stack" style="margin-bottom:28px;">
+            <?php foreach ($peerSessions as $ps) { ?>
+              <div class="announce-card <?php echo $ps['featured'] ? 'is-pinned' : ''; ?>">
+                <div class="announce-top">
+                  <span class="category-tag"><?php echo h($ps['skill_topic']); ?></span>
+                  <span class="session-mode-tag <?php echo strtolower($ps['mode']) === 'online' ? 'online' : 'campus'; ?>">
+                    <?php echo strtolower($ps['mode']) === 'online' ? '🌐 Online' : '🏫 Campus'; ?>
+                  </span>
+                  <span class="deadline-tag soon"><?php echo h(date("M j", strtotime($ps['session_date']))); ?> · <?php echo h($ps['session_time']); ?></span>
+                </div>
+                <h3><a href="peer_sessions.php"><?php echo h($ps['title']); ?></a></h3>
+                <p class="announce-meta">Hosted by <strong><?php echo h($ps['host_name']); ?></strong> · <?php echo intval($ps['joined_count']); ?>/<?php echo intval($ps['max_seats']); ?> seats reserved</p>
+              </div>
+            <?php } ?>
+          </div>
+        <?php } else { ?>
+          <div class="empty-state" style="margin:0 0 28px;"><h3>No upcoming sessions</h3><p><a href="peer_sessions.php" style="color:var(--accent); font-weight:600;">Host a peer teaching session</a> for your classmates!</p></div>
+        <?php } ?>
+
+        <div class="dash-section-head">
+          <h2>📢 Latest Announcements</h2>
+          <div>
+            <a href="saved_announcements.php" style="margin-right:12px;">🔖 Saved (<?php echo $savedNoticeCount; ?>)</a>
+            <a href="announcements.php">View all →</a>
+          </div>
         </div>
         <?php if (count($announcements) > 0) { ?>
           <div class="dash-stack">
-            <?php foreach ($announcements as $a) { $info = deadlineInfo($a['days_left']); ?>
+            <?php foreach ($announcements as $a) {
+              $info = deadlineInfo($a['days_left']);
+              $isSaved = isset($savedMap[$a['id']]);
+            ?>
               <div class="announce-card <?php echo $a['pinned'] ? 'is-pinned' : ''; ?>">
                 <div class="announce-top">
                   <span class="category-tag"><?php echo h($a['category']); ?></span>
@@ -113,7 +200,14 @@ layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening on
                 </div>
                 <h3><a href="announcements.php?category=<?php echo urlencode($a['category']); ?>"><?php echo h($a['title']); ?></a></h3>
                 <p class="announce-body"><?php echo h(textLen($a['body']) > 140 ? textCut($a['body'], 140) . '…' : $a['body']); ?></p>
-                <p class="announce-meta">Posted <?php echo timeAgo($a['created_at']); ?></p>
+                <div class="card-actions" style="padding-top:4px;">
+                  <span class="announce-meta">Posted <?php echo timeAgo($a['created_at']); ?></span>
+                  <form class="ajax-form inline-form" action="toggle_save_announcement.php" method="POST" style="margin-left:auto;">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="id" value="<?php echo $a['id']; ?>">
+                    <button type="submit" class="btn-outline <?php echo $isSaved ? 'active' : ''; ?>" style="padding:5px 11px; font-size:0.78rem;"><?php echo $isSaved ? '🔖 Saved' : '🔖 Save'; ?></button>
+                  </form>
+                </div>
               </div>
             <?php } ?>
           </div>
@@ -124,7 +218,7 @@ layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening on
 
       <aside>
         <div class="dash-section-head">
-          <h2>Suggested for you</h2>
+          <h2>✨ Suggested Matches</h2>
           <a href="browse.php">Browse all →</a>
         </div>
         <?php if (count($matches) > 0) { ?>
@@ -154,7 +248,7 @@ layoutStart("Home", "Welcome back, " . $currentUser, "Here's what's happening on
         <?php } ?>
 
         <div class="dash-section-head" style="margin-top:28px;">
-          <h2>Help board</h2>
+          <h2>🤝 Help Board</h2>
           <a href="help_board.php">Open →</a>
         </div>
         <?php if (count($helpPosts) > 0) { ?>

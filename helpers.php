@@ -1,6 +1,143 @@
 <?php
+mysqli_report(MYSQLI_REPORT_OFF);
+
+function tableHasColumn($conn, $table, $column) {
+  if (!$conn || !($conn instanceof mysqli)) { return false; }
+  $t = $conn->real_escape_string($table);
+  $c = $conn->real_escape_string($column);
+  $res = $conn->query("SHOW COLUMNS FROM `$t` LIKE '$c'");
+  return ($res && $res->num_rows > 0);
+}
+
+function ensureSchema($conn) {
+  if (!$conn || !($conn instanceof mysqli)) { return; }
+  static $checked = false;
+  if ($checked) { return; }
+  $checked = true;
+
+  // 1. Announcements table
+  $conn->query("CREATE TABLE IF NOT EXISTS announcements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    body TEXT NOT NULL,
+    category VARCHAR(30) NOT NULL DEFAULT 'General',
+    link VARCHAR(500) DEFAULT NULL,
+    deadline DATE DEFAULT NULL,
+    pinned TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )");
+
+  // 2. Announcement interest table
+  if (tableHasColumn($conn, 'announcement_interest', 'id') && !tableHasColumn($conn, 'announcement_interest', 'user_name')) {
+    $conn->query("DROP TABLE IF EXISTS announcement_interest");
+  }
+  $conn->query("CREATE TABLE IF NOT EXISTS announcement_interest (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    announcement_id INT NOT NULL,
+    user_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_interest (announcement_id, user_name)
+  )");
+
+  // 3. Saved announcements table — auto-repair if an older table exists without user_name or announcement_id
+  if (
+    !tableHasColumn($conn, 'saved_announcements', 'user_name') ||
+    !tableHasColumn($conn, 'saved_announcements', 'announcement_id') ||
+    !tableHasColumn($conn, 'saved_announcements', 'created_at')
+  ) {
+    $conn->query("DROP TABLE IF EXISTS saved_announcements");
+  }
+  $conn->query("CREATE TABLE IF NOT EXISTS saved_announcements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    announcement_id INT NOT NULL,
+    user_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_saved_announcement (announcement_id, user_name)
+  )");
+
+  // 4. Help posts & responses tables
+  $conn->query("CREATE TABLE IF NOT EXISTS help_posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    author_name VARCHAR(100) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    details TEXT NOT NULL,
+    status VARCHAR(10) NOT NULL DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )");
+
+  $conn->query("CREATE TABLE IF NOT EXISTS help_responses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    responder_name VARCHAR(100) NOT NULL,
+    message VARCHAR(300) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_response (post_id, responder_name)
+  )");
+
+  // 5. Peer sessions table — auto-repair if an older table exists with different columns
+  if (
+    !tableHasColumn($conn, 'peer_sessions', 'host_name') ||
+    !tableHasColumn($conn, 'peer_sessions', 'skill_topic') ||
+    !tableHasColumn($conn, 'peer_sessions', 'session_date') ||
+    !tableHasColumn($conn, 'peer_sessions', 'featured') ||
+    !tableHasColumn($conn, 'peer_sessions', 'max_seats') ||
+    !tableHasColumn($conn, 'peer_sessions', 'location_link')
+  ) {
+    $conn->query("DROP TABLE IF EXISTS peer_sessions");
+  }
+  $conn->query("CREATE TABLE IF NOT EXISTS peer_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    host_name VARCHAR(100) NOT NULL,
+    title VARCHAR(180) NOT NULL,
+    skill_topic VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    session_date DATE NOT NULL,
+    session_time VARCHAR(30) NOT NULL,
+    duration_mins INT NOT NULL DEFAULT 60,
+    mode VARCHAR(20) NOT NULL DEFAULT 'Online',
+    location_link VARCHAR(400) NOT NULL,
+    max_seats INT NOT NULL DEFAULT 20,
+    status VARCHAR(20) NOT NULL DEFAULT 'upcoming',
+    featured TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )");
+
+  // 6. Peer session participants table — auto-repair if an older table exists with different columns
+  if (
+    !tableHasColumn($conn, 'peer_session_participants', 'session_id') ||
+    !tableHasColumn($conn, 'peer_session_participants', 'user_name')
+  ) {
+    $conn->query("DROP TABLE IF EXISTS peer_session_participants");
+  }
+  $conn->query("CREATE TABLE IF NOT EXISTS peer_session_participants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id INT NOT NULL,
+    user_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_session_participant (session_id, user_name)
+  )");
+
+  // 7. Auto-seed initial Peer Sessions if empty so home page & dashboard immediately show upcoming sessions
+  $countPS = $conn->query("SELECT COUNT(*) AS c FROM peer_sessions");
+  if ($countPS && intval($countPS->fetch_assoc()['c']) === 0) {
+    $conn->query("INSERT INTO peer_sessions (host_name, title, skill_topic, description, session_date, session_time, duration_mins, mode, location_link, max_seats, status, featured) VALUES
+      ('Aarav Deshmukh', 'Full-Stack Web Dev Crash Course (React + PHP)', 'Web Development', 'Hands-on peer workshop covering component architecture, REST APIs, and connecting PHP & MySQL backends.', DATE_ADD(CURDATE(), INTERVAL 2 DAY), '4:30 PM', 90, 'Online', 'https://meet.google.com/sc-webdev-mit', 25, 'upcoming', 1),
+      ('Sneha Kulkarni', 'DSA Graph & Tree Algorithms Problem Solving', 'Data Structures & Algorithms', 'Live coding and placement-focused walkthrough of BFS, DFS, Dijkstra, and Tree DP questions.', DATE_ADD(CURDATE(), INTERVAL 4 DAY), '5:00 PM', 60, 'Campus', 'CSE Lab 2, Main Building (2nd Floor)', 20, 'upcoming', 1),
+      ('Rohan Patil', 'Python for Data Science & Machine Learning', 'Python & ML', 'Practical session on NumPy, Pandas, data cleaning, and training your first Scikit-learn model.', DATE_ADD(CURDATE(), INTERVAL 6 DAY), '3:15 PM', 75, 'Online', 'https://meet.google.com/sc-python-ml', 30, 'upcoming', 0),
+      ('Priya Sharma', 'UI/UX Prototyping in Figma for Hackathons', 'UI/UX Design', 'Learn how to design clean wireframes, design systems, and clickable hackathon prototypes in 60 minutes.', DATE_ADD(CURDATE(), INTERVAL 8 DAY), '4:00 PM', 60, 'Campus', 'Design Studio Seminar Hall, IT Dept', 18, 'upcoming', 0)
+    ");
+  }
+}
+
+if (isset($conn) && ($conn instanceof mysqli)) {
+  ensureSchema($conn);
+}
+
 function timeAgo($datetime) {
+  if (!$datetime) { return "recently"; }
   $timestamp = strtotime($datetime);
+  if (!$timestamp) { return "recently"; }
   $diff = time() - $timestamp;
 
   if ($diff < 60) { return "just now"; }
@@ -24,6 +161,7 @@ function csrf_field() {
 function csrf_verify($token) {
   return isset($_SESSION['csrf_token']) && !empty($token) && hash_equals($_SESSION['csrf_token'], $token);
 }
+
 function skillTags($skillsStr) {
   if (!$skillsStr || $skillsStr == "Nothing yet") {
     return '<span class="skill-tag skill-tag-empty">Nothing yet</span>';
@@ -89,26 +227,60 @@ function matchingSkills($wantedStr, $offeredStr) {
 
 function connectionStatus($conn, $a, $b) {
   $stmt = $conn->prepare("SELECT status FROM requests WHERE (requester_name = ? AND target_name = ?) OR (requester_name = ? AND target_name = ?) ORDER BY id DESC LIMIT 1");
+  if (!$stmt) { return null; }
   $stmt->bind_param("ssss", $a, $b, $b, $a);
   $stmt->execute();
   $res = $stmt->get_result();
-  $row = $res->fetch_assoc();
+  $row = $res ? $res->fetch_assoc() : null;
   $stmt->close();
   return $row ? $row['status'] : null;
 }
 
 function cleanupUserData($conn, $name) {
+  ensureSchema($conn);
   $s = $conn->prepare("DELETE FROM announcement_interest WHERE user_name = ?");
-  $s->bind_param("s", $name); $s->execute(); $s->close();
+  if ($s) { $s->bind_param("s", $name); $s->execute(); $s->close(); }
+
+  $s = $conn->prepare("DELETE FROM saved_announcements WHERE user_name = ?");
+  if ($s) { $s->bind_param("s", $name); $s->execute(); $s->close(); }
+
+  $s = $conn->prepare("DELETE FROM peer_session_participants WHERE user_name = ? OR session_id IN (SELECT id FROM peer_sessions WHERE host_name = ?)");
+  if ($s) { $s->bind_param("ss", $name, $name); $s->execute(); $s->close(); }
+
+  $s = $conn->prepare("DELETE FROM peer_sessions WHERE host_name = ?");
+  if ($s) { $s->bind_param("s", $name); $s->execute(); $s->close(); }
 
   $s = $conn->prepare("DELETE FROM help_responses WHERE responder_name = ? OR post_id IN (SELECT id FROM help_posts WHERE author_name = ?)");
-  $s->bind_param("ss", $name, $name); $s->execute(); $s->close();
+  if ($s) { $s->bind_param("ss", $name, $name); $s->execute(); $s->close(); }
 
   $s = $conn->prepare("DELETE FROM help_posts WHERE author_name = ?");
-  $s->bind_param("s", $name); $s->execute(); $s->close();
+  if ($s) { $s->bind_param("s", $name); $s->execute(); $s->close(); }
 }
 
-function siteNav($currentUser) {
+function siteNav($currentUser = '') {
+  global $conn;
+  if ($currentUser === '' && isset($_SESSION['profileName'])) {
+    $currentUser = $_SESSION['profileName'];
+  }
+  $isAdmin = !empty($_SESSION['isAdmin']);
+  $savedCount = 0;
+  $upcomingSessions = 0;
+
+  if (isset($conn) && ($conn instanceof mysqli)) {
+    ensureSchema($conn);
+    $resS = $conn->query("SELECT COUNT(*) AS c FROM peer_sessions WHERE status = 'upcoming'");
+    if ($resS) { $upcomingSessions = intval($resS->fetch_assoc()['c']); }
+    if ($currentUser !== '') {
+      $stmtSaved = $conn->prepare("SELECT COUNT(*) AS c FROM saved_announcements WHERE user_name = ?");
+      if ($stmtSaved) {
+        $stmtSaved->bind_param("s", $currentUser);
+        $stmtSaved->execute();
+        $rSaved = $stmtSaved->get_result();
+        if ($rSaved) { $savedCount = intval($rSaved->fetch_assoc()['c']); }
+        $stmtSaved->close();
+      }
+    }
+  }
   ?>
   <nav>
     <a href="index.php" class="logo-link">
@@ -116,18 +288,36 @@ function siteNav($currentUser) {
       <span class="logo-text">Skill<strong>Connect</strong></span>
     </a>
     <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
+      <a href="index.php" class="nav-link">🏠 Home</a>
       <?php if ($currentUser) { ?>
-        <a href="profile.php" class="nav-link">My Profile</a>
-        <a href="browse.php" class="nav-link">Browse Skills</a>
-        <a href="announcements.php" class="nav-link">Announcements</a>
-        <a href="help_board.php" class="nav-link">Help Board</a>
-        <a href="requests.php" class="nav-link">My Requests</a>
-        <a href="connections.php" class="nav-link">My Connections</a>
-        <a href="logout.php" class="nav-link">Logout (<?php echo h($currentUser); ?>)</a>
+        <a href="profile.php" class="nav-link">👤 My Profile</a>
+        <a href="browse.php" class="nav-link">🔍 Browse Skills</a>
+        <a href="peer_sessions.php" class="nav-link">
+          🎓 Peer Sessions
+          <?php if ($upcomingSessions > 0) { ?><span class="notif-badge subtle"><?php echo $upcomingSessions; ?></span><?php } ?>
+        </a>
+        <a href="announcements.php" class="nav-link">📢 Announcements</a>
+        <a href="saved_announcements.php" class="nav-link">
+          🔖 Saved Notices
+          <?php if ($savedCount > 0) { ?><span class="notif-badge subtle"><?php echo $savedCount; ?></span><?php } ?>
+        </a>
+        <a href="help_board.php" class="nav-link">🤝 Help Board</a>
+        <a href="requests.php" class="nav-link">📬 My Requests</a>
+        <a href="connections.php" class="nav-link">💬 My Connections</a>
       <?php } else { ?>
-        <a href="profile.php" class="nav-link">Create Profile</a>
-        <a href="login.php" class="nav-link">Login</a>
+        <a href="profile.php" class="nav-link">✨ Create Profile</a>
+        <a href="login.php" class="nav-link">🔑 Student Login</a>
+        <a href="peer_sessions.php" class="nav-link">
+          🎓 Peer Sessions
+          <?php if ($upcomingSessions > 0) { ?><span class="notif-badge subtle"><?php echo $upcomingSessions; ?></span><?php } ?>
+        </a>
+        <a href="announcements.php" class="nav-link">📢 Announcements</a>
+      <?php } ?>
+
+
+
+      <?php if ($currentUser) { ?>
+        <a href="logout.php" class="nav-link">🚪 Logout (<?php echo h($currentUser); ?>)</a>
       <?php } ?>
     </div>
   </nav>
@@ -136,23 +326,69 @@ function siteNav($currentUser) {
 
 function adminNav() {
   ?>
-  <nav>
-    <a href="index.php" class="logo-link">
+  <nav class="admin-sidebar">
+    <a href="index.php?view_site=1" class="logo-link">
       <span class="logo-badge">SC</span>
       <span class="logo-text">Skill<strong>Connect</strong></span>
     </a>
+    <div class="admin-role-pill">🛡️ Admin Control Center</div>
     <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <a href="admin.php" class="nav-link">Admin Dashboard</a>
-      <a href="admin_announcements.php" class="nav-link">Announcements</a>
-      <a href="admin_logout.php" class="nav-link">Admin Logout</a>
+      <a href="admin.php" class="nav-link">📊 Dashboard Overview</a>
+      <a href="admin.php#users-section" class="nav-link">👥 Manage Students</a>
+      <a href="admin.php#sessions-section" class="nav-link">🎓 Peer Sessions</a>
+      <a href="admin_announcements.php" class="nav-link">📢 Announcements</a>
+      <a href="admin.php#help-section" class="nav-link">🤝 Help Board</a>
+      <a href="admin.php#requests-section" class="nav-link">🔄 Skill Connections</a>
+      <a href="admin.php#reports-section" class="nav-link">🚩 User Reports</a>
+      <div class="nav-divider"></div>
+      <a href="index.php?view_site=1" class="nav-link">🌐 View Student Site</a>
+      <a href="peer_sessions.php" class="nav-link">🎓 Live Peer Sessions</a>
+      <a href="admin_logout.php" class="nav-link">🚪 Admin Logout</a>
     </div>
   </nav>
   <?php
 }
 
+function renderChatbot() {
+  ?>
+  <div id="chatbot-window" aria-live="polite">
+    <div id="chatbot-header">
+      <div class="chatbot-header-info">
+        <span class="chatbot-avatar-dot">🤖</span>
+        <div>
+          <div class="chatbot-title">Skill Connect AI</div>
+          <div class="chatbot-subtitle"><span class="online-dot"></span> Smart Campus Assistant</div>
+        </div>
+      </div>
+      <div class="chatbot-header-actions">
+        <button id="chatbot-clear" type="button" title="Clear conversation">↺ Reset</button>
+        <button id="chatbot-close" type="button" title="Minimize chat">✕</button>
+      </div>
+    </div>
+    <div id="chatbot-suggestions">
+      <button type="button" class="chat-chip" data-prompt="Find a mentor who can teach Python or Web Development">🔍 Find a Mentor</button>
+      <button type="button" class="chat-chip" data-prompt="Show upcoming peer teaching sessions">🎓 Peer Sessions</button>
+      <button type="button" class="chat-chip" data-prompt="What are the latest college announcements and deadlines?">📢 Announcements</button>
+      <button type="button" class="chat-chip" data-prompt="Who is my best skill swap match?">🤝 My Matches</button>
+      <button type="button" class="chat-chip" data-prompt="Give me a 4-step learning roadmap for Data Structures & Algorithms">🗺️ DSA Roadmap</button>
+    </div>
+    <div id="chatbot-messages">
+      <div class="chat-msg bot">Hi! I'm your <strong>Skill Connect Smart AI</strong>. I remember our chat as you move across pages! Ask me to find mentors, check upcoming peer sessions, summarize announcements, or build a learning roadmap.</div>
+    </div>
+    <div id="chatbot-input-row">
+      <input type="text" id="chatbot-input" placeholder="Ask about mentors, sessions, skills, notices...">
+      <button id="chatbot-send" type="button">Send ➤</button>
+    </div>
+  </div>
+  <button id="chatbot-toggle" type="button" aria-label="Open Skill Connect AI Assistant">
+    <span class="chatbot-toggle-icon">💬</span>
+    <span class="chatbot-toggle-label">Ask AI</span>
+  </button>
+  <?php
+}
+
 function layoutStart($title, $heading, $subtitle = '', $mode = 'user') {
-  $currentUser = ($mode === 'user' && isset($_SESSION['profileName'])) ? $_SESSION['profileName'] : '';
+  $currentUser = (isset($_SESSION['profileName'])) ? $_SESSION['profileName'] : '';
   ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -177,21 +413,9 @@ function layoutEnd($mode = 'user') {
   </main>
   <footer>
     <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-    <p>Built with HTML, CSS, JavaScript, PHP & MySQL</p>
+    <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
-  <?php if ($mode !== 'admin') { ?>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <?php } ?>
+  <?php renderChatbot(); ?>
   <script src="script.js"></script>
 </body>
 </html>
@@ -203,8 +427,11 @@ function renderLoginRequired($title, $subtitle) {
   ?>
   <div class="empty-state">
     <h3>Please log in</h3>
-    <p>You need to be logged in to see this page.</p>
-    <a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none; margin-top:12px;">Log In</a>
+    <p>Please log in with your student account or create a profile to access this page.</p>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px;">
+      <a href="login.php" class="connectBtn" style="display:inline-block; text-decoration:none;">Student Log In</a>
+      <a href="profile.php" class="btn-outline" style="display:inline-block; text-decoration:none;">Create Profile</a>
+    </div>
   </div>
   <?php
   layoutEnd();
@@ -212,7 +439,7 @@ function renderLoginRequired($title, $subtitle) {
 }
 
 function textLen($s) {
-  return function_exists('mb_strlen') ? mb_strlen($s, 'UTF-8') : strlen(utf8_decode($s));
+  return function_exists('mb_strlen') ? mb_strlen($s, 'UTF-8') : strlen((string)$s);
 }
 
 function textCut($s, $len) {

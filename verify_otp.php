@@ -11,13 +11,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   if (!csrf_verify($_POST['csrf_token'] ?? '')) {
     $error = "Security check failed. Please try again.";
   } else {
-    $e = $conn->real_escape_string(trim($_POST['email']));
-    $otp = trim($_POST['otp']);
+    $e = $conn->real_escape_string(trim($_POST['email'] ?? ''));
+    $otp = trim($_POST['otp'] ?? '');
     $o = $conn->real_escape_string($otp);
 
     $result = $conn->query("SELECT * FROM users WHERE email = '$e' AND verify_otp = '$o' AND verify_otp_expires > NOW()");
 
-    if ($result->num_rows > 0) {
+    if ($result && $result->num_rows > 0) {
       $user = $result->fetch_assoc();
       $conn->query("UPDATE users SET verified = 1, verify_otp = NULL, verify_otp_expires = NULL WHERE id = {$user['id']}");
       $success = true;
@@ -26,42 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
   }
 }
+
+layoutStart("Verify Your Email", "Verify Your Email", "Enter the 6-digit code we sent you.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verify Your Email - Skill Connect</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body data-user="<?php echo isset($_SESSION['profileName']) ? htmlspecialchars($_SESSION['profileName']) : ''; ?>">
-  <nav>
-    <a href="index.php" class="logo-link">
-      <span class="logo-badge">SC</span>
-      <span class="logo-text">Skill<strong>Connect</strong></span>
-    </a>
-    <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <?php if (isset($_SESSION['profileName'])) { ?>
-        <a href="profile.php" class="nav-link">My Profile</a>
-        <a href="browse.php" class="nav-link">Browse Skills</a>
-      <?php } else { ?>
-        <a href="login.php" class="nav-link">Login</a>
-      <?php } ?>
-    </div>
-  </nav>
-  <header>
-    <h1>Verify Your Email</h1>
-    <p>Enter the 6-digit code we sent you.</p>
-  </header>
-  <main>
     <?php if ($success) { ?>
       <p style="color:var(--accent); text-align:center; margin-bottom:16px; font-weight:600;">✓ Email verified successfully!</p>
       <p style="text-align:center;"><a href="<?php echo isset($_SESSION['profileName']) ? 'profile.php' : 'login.php'; ?>" class="connectBtn" style="display:inline-block; text-decoration:none;">Continue</a></p>
     <?php } else { ?>
       <?php if ($error) { ?>
-        <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo $error; ?></p>
+        <p style="color:var(--danger); text-align:center; margin-bottom:16px; font-weight:600;"><?php echo h($error); ?></p>
       <?php } ?>
       <form action="verify_otp.php" method="POST">
         <?php echo csrf_field(); ?>
@@ -79,21 +52,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <a href="resend_verification.php" style="color:var(--accent); font-weight:600;">Resend code</a>
       </p>
     <?php } ?>
-  </main>
-  <footer>
-    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-  </footer>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>

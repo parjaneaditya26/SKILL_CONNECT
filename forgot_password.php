@@ -10,11 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   if (!csrf_verify($_POST['csrf_token'] ?? '')) {
     $message = "Security check failed. Please try again.";
   } else {
-    $email = trim($_POST['email']);
+    $email = trim($_POST['email'] ?? '');
     $e = $conn->real_escape_string($email);
     $result = $conn->query("SELECT * FROM users WHERE email = '$e'");
 
-    if ($result->num_rows > 0) {
+    if ($result && $result->num_rows > 0) {
       $user = $result->fetch_assoc();
       $token = bin2hex(random_bytes(16));
       $t = $conn->real_escape_string($token);
@@ -42,32 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
   }
 }
+
+layoutStart("Forgot Password", "Forgot Password", "Enter your email and we'll send you a reset link.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Forgot Password - Skill Connect</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body data-user="">
-  <nav>
-    <a href="index.php" class="logo-link">
-      <span class="logo-badge">SC</span>
-      <span class="logo-text">Skill<strong>Connect</strong></span>
-    </a>
-    <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <a href="profile.php" class="nav-link">Create Profile</a>
-      <a href="login.php" class="nav-link">Login</a>
-    </div>
-  </nav>
-  <header>
-    <h1>Forgot Password</h1>
-    <p>Enter your email and we'll send you a reset link.</p>
-  </header>
-  <main>
     <?php if ($message) { ?>
       <p style="text-align:center; margin-bottom:16px; font-weight:600; color:var(--accent);"><?php echo htmlspecialchars($message); ?></p>
     <?php } ?>
@@ -82,21 +59,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <p style="text-align:center; margin-top:16px; font-size:0.9rem;">
       <a href="login.php" style="color:var(--accent); font-weight:600;">Back to Login</a>
     </p>
-  </main>
-  <footer>
-    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-  </footer>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>

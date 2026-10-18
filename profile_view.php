@@ -3,12 +3,14 @@ session_start();
 include 'db_connect.php';
 include 'helpers.php';
 
-$id = intval($_GET['id']);
+$id = intval($_GET['id'] ?? 0);
 $currentUser = isset($_SESSION['profileName']) ? $_SESSION['profileName'] : "";
 
 $result = $conn->query("SELECT * FROM users WHERE id = $id");
-if ($result->num_rows == 0) {
-  echo "Profile not found.";
+if (!$result || $result->num_rows == 0) {
+  layoutStart("Profile Not Found", "Profile Not Found", "This user profile could not be found.");
+  echo '<div class="empty-state"><h3>User not found</h3><p><a href="browse.php" class="connectBtn" style="text-decoration:none; display:inline-block; margin-top:10px;">Back to Browse Skills</a></p></div>';
+  layoutEnd();
   exit;
 }
 $user = $result->fetch_assoc();
@@ -18,8 +20,9 @@ if ($user['name'] == $currentUser) {
   $showContact = true;
 } elseif ($currentUser != "") {
   $cu = $conn->real_escape_string($currentUser);
-  $chk = $conn->query("SELECT id FROM requests WHERE status='accepted' AND ((requester_name='$cu' AND target_id=$id) OR (requester_name='{$user['name']}' AND target_name='$cu'))");
-  if ($chk->num_rows > 0) { $showContact = true; }
+  $un = $conn->real_escape_string($user['name']);
+  $chk = $conn->query("SELECT id FROM requests WHERE status='accepted' AND ((requester_name='$cu' AND target_id=$id) OR (requester_name='$un' AND target_name='$cu'))");
+  if ($chk && $chk->num_rows > 0) { $showContact = true; }
 }
 
 $ratings = $conn->query("SELECT * FROM ratings WHERE target_id = $id ORDER BY created_at DESC");
@@ -27,44 +30,11 @@ $avgResult = $conn->query("SELECT AVG(rating) as avg_rating, COUNT(*) as total F
 $avgRow = $avgResult->fetch_assoc();
 $avgRating = $avgRow['avg_rating'] ? round($avgRow['avg_rating'], 1) : null;
 $ratingCount = $avgRow['total'];
+
+$heading = $user['name'] . ($user['verified'] ? ' ✓' : '');
+$sub = $user['branch'] . ' · ' . $user['year_of_study'];
+layoutStart($user['name'], $heading, $sub);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?php echo htmlspecialchars($user['name']); ?> - Skill Connect</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body data-user="<?php echo htmlspecialchars($currentUser); ?>">
-  <nav>
-    <a href="index.php" class="logo-link">
-      <span class="logo-badge">SC</span>
-      <span class="logo-text">Skill<strong>Connect</strong></span>
-    </a>
-    <div class="nav-links">
-      <a href="index.php" class="nav-link">Home</a>
-      <?php if ($currentUser) { ?>
-        <a href="profile.php" class="nav-link">My Profile</a>
-        <a href="browse.php" class="nav-link">Browse Skills</a>
-        <a href="announcements.php" class="nav-link">Announcements</a>
-        <a href="help_board.php" class="nav-link">Help Board</a>
-        <a href="requests.php" class="nav-link">My Requests</a>
-        <a href="connections.php" class="nav-link">My Connections</a>
-        <a href="logout.php" class="nav-link">Logout (<?php echo htmlspecialchars($currentUser); ?>)</a>
-      <?php } else { ?>
-        <a href="profile.php" class="nav-link">Create Profile</a>
-        <a href="login.php" class="nav-link">Login</a>
-      <?php } ?>
-    </div>
-  </nav>
-
-  <header>
-    <h1><?php echo htmlspecialchars($user['name']); ?> <?php if ($user['verified']) { ?><span style="font-size:1.1rem;">✓</span><?php } ?></h1>
-    <p><?php echo htmlspecialchars($user['branch']); ?> · <?php echo htmlspecialchars($user['year_of_study']); ?></p>
-  </header>
-
-  <main>
     <div class="skill-card profile-hero-card">
       <div class="avatar"><?php echo strtoupper(substr($user['name'], 0, 1)); ?></div>
       <span class="category-tag"><?php echo htmlspecialchars($user['branch']); ?></span>
@@ -86,14 +56,14 @@ $ratingCount = $avgRow['total'];
     </div>
 
     <?php if ($currentUser && $currentUser != $user['name']) { ?>
-      <p style="text-align:center; margin-bottom:30px;">
-        <a href="report_user.php?id=<?php echo $user['id']; ?>&name=<?php echo urlencode($user['name']); ?>" style="color:var(--text-muted); font-size:0.82rem;">Report this profile</a>
+      <p style="margin-bottom:28px;">
+        <a href="report_user.php?id=<?php echo $user['id']; ?>&name=<?php echo urlencode($user['name']); ?>" class="btn-outline danger" style="font-size:0.82rem; padding:6px 12px;">🚩 Report this profile</a>
       </p>
     <?php } ?>
 
     <h2 style="color:var(--text-dark); margin-bottom:18px; font-size:1.3rem;">Reviews (<?php echo $ratingCount; ?>)</h2>
     <div class="skill-list">
-      <?php if ($ratings->num_rows > 0) { ?>
+      <?php if ($ratings && $ratings->num_rows > 0) { ?>
         <?php while ($r = $ratings->fetch_assoc()) { ?>
           <div class="skill-card">
             <p class="rating-display">⭐ <?php echo $r['rating']; ?>/5</p>
@@ -111,22 +81,4 @@ $ratingCount = $avgRow['total'];
         </div>
       <?php } ?>
     </div>
-  </main>
-
-  <footer>
-    <p>Skill Connect &copy; 2026 — MIT CSN, A College Project (CEP)</p>
-  </footer>
-  <div id="chatbot-window">
-    <div id="chatbot-header">💬 Skill Connect Assistant</div>
-    <div id="chatbot-messages">
-      <div class="chat-msg bot">Hi! I'm the Skill Connect assistant. Ask me how to use the site, or for skill-learning advice.</div>
-    </div>
-    <div id="chatbot-input-row">
-      <input type="text" id="chatbot-input" placeholder="Ask a question...">
-      <button id="chatbot-send" type="button">Send</button>
-    </div>
-  </div>
-  <button id="chatbot-toggle">💬</button>
-  <script src="script.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>
