@@ -4,8 +4,9 @@ include 'db_connect.php';
 include 'helpers.php';
 
 $error = "";
-$ADMIN_USERNAME = "admin";
-$ADMIN_PASSWORD = "skillconnect2026";
+$envAdmin = is_readable(__DIR__ . '/.env') ? parse_ini_file(__DIR__ . '/.env') : [];
+$ADMIN_USERNAME = $envAdmin['ADMIN_USER'] ?? 'admin';
+$ADMIN_PASSWORD = $envAdmin['ADMIN_PASS'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   if (!csrf_verify($_POST['csrf_token'] ?? '')) {
@@ -14,8 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $loginInput = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    // If admin logs in via Student Login with username "admin" and password "skillconnect2026", open Admin Dashboard
-    if (strtolower($loginInput) === strtolower($ADMIN_USERNAME) && $password === $ADMIN_PASSWORD) {
+    if ($ADMIN_PASSWORD !== '' && strtolower($loginInput) === strtolower($ADMIN_USERNAME) && $password === $ADMIN_PASSWORD) {
       $_SESSION['isAdmin'] = true;
       header("Location: admin.php");
       exit;
