@@ -132,31 +132,33 @@ function callGeminiChatbotApi($systemContext, $history, $userMessage) {
           "role" => "user",
           "parts" => [["text" => $fullPrompt]]
         ]
+      ],
+      "generationConfig" => [
+        "thinkingConfig" => ["thinkingLevel" => "low"]
       ]
     ]);
 
     // Support both Vertex AI Express Mode (for AQ.* keys) and Google AI Studio (generativelanguage.googleapis.com)
+    // Models: gemini-3.8-flash is the current one, gemini-3.7-flash is the fallback.
+    // (The old 2.5 / 2.0 / 1.5 names are retired for new keys, which caused the "connection" error.)
+    $gl = "https://generativelanguage.googleapis.com/v1beta/models/";
+    $ap = "https://aiplatform.googleapis.com/v1/publishers/google/models/";
+    $q  = ":generateContent?key=" . urlencode($gemKey);
     if (strpos($gemKey, 'AQ.') === 0) {
-      $endpoints = [
-        "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash:generateContent?key=" . urlencode($gemKey),
-        "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.0-flash:generateContent?key=" . urlencode($gemKey),
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . urlencode($gemKey),
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" . urlencode($gemKey)
-      ];
+      $endpoints = [$ap . "gemini-3.8-flash" . $q, $gl . "gemini-3.8-flash" . $q, $gl . "gemini-3.7-flash" . $q];
     } else {
-      $endpoints = [
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . urlencode($gemKey),
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" . urlencode($gemKey),
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . urlencode($gemKey),
-        "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-flash:generateContent?key=" . urlencode($gemKey)
-      ];
+      $endpoints = [$gl . "gemini-3.8-flash" . $q, $gl . "gemini-3.7-flash" . $q, $ap . "gemini-3.8-flash" . $q];
     }
 
-    foreach (array_slice($endpoints, 0, 2) as $epUrl) {
+    foreach (array_slice($endpoints, 0, 3) as $epUrl) {
       $resp = httpPostJson($epUrl, $gemPayload, ["x-goog-api-key: " . $gemKey], 6);
       if ($resp['ok']) {
         $data = json_decode($resp['body'], true);
-        $txt = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+        $txt = "";
+        foreach (($data['candidates'][0]['content']['parts'] ?? []) as $part) {
+          if (!empty($part['thought'])) { continue; }
+          if (isset($part['text'])) { $txt .= $part['text']; }
+        }
         if (trim($txt) !== '') {
           return ["ok" => true, "text" => trim($txt)];
         }
