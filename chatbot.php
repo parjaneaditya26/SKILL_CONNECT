@@ -6,6 +6,18 @@ include 'helpers.php';
 
 header('Content-Type: application/json');
 
+// Always send valid JSON back to the browser, even if something crashes or times out.
+@set_time_limit(30);
+ob_start();
+register_shutdown_function(function () {
+  $out = ob_get_contents();
+  if ($out === false || json_decode(trim((string)$out), true) === null) {
+    @ob_end_clean();
+    if (!headers_sent()) { header('Content-Type: application/json'); http_response_code(200); }
+    echo json_encode(["reply" => "Sorry, the assistant had a problem just now. Please try again in a moment."]);
+  }
+});
+
 if (!csrf_verify_request()) {
   echo json_encode(["reply" => "Security check failed. Please refresh the page and try again."]);
   exit;
@@ -53,6 +65,10 @@ $resH = $conn->query("SELECT id, author_name, type, title, details FROM help_pos
 if ($resH) { $openHelp = $resH->fetch_all(MYSQLI_ASSOC); }
 
 function httpPostJson($url, $jsonBody, $extraHeaders = [], $timeoutSec = 12) {
+  // Shared time budget for all outside AI calls, so a slow network can never hang the page.
+  $remaining = ($GLOBALS['AI_DEADLINE'] ?? (microtime(true) + 12)) - microtime(true);
+  if ($remaining < 1.5) { return ["ok" => false, "body" => ""]; }
+  $timeoutSec = max(1, (int)floor(min($timeoutSec, $remaining)));
   $headers = array_merge([
     "Content-Type: application/json",
     "Accept: application/json"
@@ -68,6 +84,7 @@ function httpPostJson($url, $jsonBody, $extraHeaders = [], $timeoutSec = 12) {
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSec);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, min(4, $timeoutSec));
     $body = curl_exec($ch);
     $code = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
     curl_close($ch);
@@ -135,8 +152,8 @@ function callGeminiChatbotApi($systemContext, $history, $userMessage) {
       ];
     }
 
-    foreach ($endpoints as $epUrl) {
-      $resp = httpPostJson($epUrl, $gemPayload, ["x-goog-api-key: " . $gemKey], 10);
+    foreach (array_slice($endpoints, 0, 2) as $epUrl) {
+      $resp = httpPostJson($epUrl, $gemPayload, ["x-goog-api-key: " . $gemKey], 6);
       if ($resp['ok']) {
         $data = json_decode($resp['body'], true);
         $txt = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
@@ -164,7 +181,7 @@ function callGeminiChatbotApi($systemContext, $history, $userMessage) {
     "messages" => $messages,
     "temperature" => 0.6
   ]);
-  $resp = httpPostJson("https://text.pollinations.ai/openai", $backupPayload, [], 10);
+  $resp = httpPostJson("https://text.pollinations.ai/openai", $backupPayload, [], 6);
   if ($resp['ok']) {
     $decoded = json_decode($resp['body'], true);
     $replyText = $decoded['choices'][0]['message']['content'] ?? '';
@@ -198,7 +215,8 @@ $systemContext = "You are the Smart AI Assistant for Skill Connect at MIT CSN (M
   . "Active College Announcements in DB: " . (count($announceSummary) ? implode(" ; ", $announceSummary) : "No active announcements right now") . "\n"
   . "Instructions: Answer the student's question accurately, concisely (2-6 bullet points or short paragraphs), and helpfully. If they ask about campus mentors, peer sessions, or announcements, use the live DB facts above and link to the relevant page. If they ask a coding, DSA, placement, or study question, give a clear, practical explanation.";
 
-// Call the Gemini API
+// Call the Gemini API (whole outside-AI step is limited to about 12 seconds)
+$GLOBALS['AI_DEADLINE'] = microtime(true) + 12;
 $aiResult = callGeminiChatbotApi($systemContext, $history, $userMessage);
 if ($aiResult['ok']) {
   echo json_encode(["reply" => $aiResult['text']]);
