@@ -75,7 +75,7 @@ if ($resH) { $openHelp = $resH->fetch_all(MYSQLI_ASSOC); }
 
 function httpPostJson($url, $jsonBody, $extraHeaders = [], $timeoutSec = 12) {
   // Shared time budget for all outside AI calls, so a slow network can never hang the page.
-  $remaining = ($GLOBALS['AI_DEADLINE'] ?? (microtime(true) + 12)) - microtime(true);
+  $remaining = ($GLOBALS['AI_DEADLINE'] ?? (microtime(true) + 25)) - microtime(true);
   if ($remaining < 1.5) { return ["ok" => false, "body" => ""]; }
   $timeoutSec = max(1, (int)floor(min($timeoutSec, $remaining)));
   $headers = array_merge([
@@ -160,7 +160,7 @@ function callGeminiChatbotApi($systemContext, $history, $userMessage) {
     }
 
     foreach (array_slice($endpoints, 0, 3) as $epUrl) {
-      $resp = httpPostJson($epUrl, $gemPayload, ["x-goog-api-key: " . $gemKey], 6);
+      $resp = httpPostJson($epUrl, $gemPayload, ["x-goog-api-key: " . $gemKey], 15);
       if ($resp['ok']) {
         $data = json_decode($resp['body'], true);
         $txt = "";
@@ -192,7 +192,7 @@ function callGeminiChatbotApi($systemContext, $history, $userMessage) {
     "messages" => $messages,
     "temperature" => 0.6
   ]);
-  $resp = httpPostJson("https://text.pollinations.ai/openai", $backupPayload, [], 6);
+  $resp = httpPostJson("https://text.pollinations.ai/openai", $backupPayload, [], 10);
   if ($resp['ok']) {
     $decoded = json_decode($resp['body'], true);
     $replyText = $decoded['choices'][0]['message']['content'] ?? '';
@@ -226,8 +226,9 @@ $systemContext = "You are the Smart AI Assistant for Skill Connect at MIT CSN (M
   . "Active College Announcements in DB: " . (count($announceSummary) ? implode(" ; ", $announceSummary) : "No active announcements right now") . "\n"
   . "Instructions: Answer the student's question accurately, concisely (2-6 bullet points or short paragraphs), and helpfully. If they ask about campus mentors, peer sessions, or announcements, use the live DB facts above and link to the relevant page. If they ask a coding, DSA, placement, or study question, give a clear, practical explanation.";
 
-// Call the Gemini API (whole outside-AI step is limited to about 12 seconds)
-$GLOBALS['AI_DEADLINE'] = microtime(true) + 12;
+// Call the Gemini API. Gemini 3.x can need 5-10 seconds on a free host, so allow up to 25 seconds in total
+// (the host allows 60 s per request). If it is still too slow, the built-in assistant answers instead.
+$GLOBALS['AI_DEADLINE'] = microtime(true) + 25;
 $aiResult = callGeminiChatbotApi($systemContext, $history, $userMessage);
 if ($aiResult['ok']) {
   echo json_encode(["reply" => $aiResult['text']]);
