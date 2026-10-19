@@ -191,7 +191,7 @@ if (chatToggle && chatWindow && chatMessages) {
     chatForm.append("history_b64", toB64(JSON.stringify(recentContext)));
     chatForm.append("csrf_token", CSRF_TOKEN);
 
-    fetch("chatbot.php", {
+    fetch("smart_reply.php", {
       method: "POST",
       headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": CSRF_TOKEN },
       body: chatForm
