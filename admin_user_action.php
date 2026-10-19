@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 if (empty($_SESSION["isAdmin"])) {
   echo json_encode(["success" => false, "message" => "Admin authentication required."]);
   exit;

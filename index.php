@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include "db_connect.php";
 include "helpers.php";
 
@@ -32,6 +32,7 @@ if ($result2) { $row2 = $result2->fetch_assoc(); $connectionCount = intval($row2
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="<?php echo h(csrf_token()); ?>">
   <title>Skill Connect — MIT CSN Peer Learning Platform</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -91,6 +92,6 @@ if ($result2) { $row2 = $result2->fetch_assoc(); $connectionCount = intval($row2
     <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
   <?php renderChatbot(); ?>
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

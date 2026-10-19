@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include 'db_connect.php';
 include 'helpers.php';
 
@@ -15,7 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $loginInput = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    if ($ADMIN_PASSWORD !== '' && strtolower($loginInput) === strtolower($ADMIN_USERNAME) && $password === $ADMIN_PASSWORD) {
+    if ($ADMIN_PASSWORD !== '' && strtolower($loginInput) === strtolower($ADMIN_USERNAME) && hash_equals($ADMIN_PASSWORD, $password)) {
+      session_regenerate_id(true);
       $_SESSION['isAdmin'] = true;
       header("Location: admin.php");
       exit;
@@ -26,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($result && $result->num_rows > 0) {
       $user = $result->fetch_assoc();
       if (password_verify($_POST['password'] ?? '', $user['password'])) {
+        session_regenerate_id(true);
         $_SESSION['profileName'] = $user['name'];
         header("Location: index.php");
         exit;

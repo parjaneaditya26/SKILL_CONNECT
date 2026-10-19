@@ -546,6 +546,7 @@ function layoutStart($title, $heading, $subtitle = '', $mode = 'user') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="<?php echo h(csrf_token()); ?>">
   <title><?php echo h($title); ?> - Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -567,7 +568,7 @@ function layoutEnd($mode = 'user') {
     <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
   <?php if ($mode !== 'admin') { renderChatbot(); } ?>
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
 <?php

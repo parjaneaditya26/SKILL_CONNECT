@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 if (empty($_SESSION["isAdmin"])) {
   echo json_encode(["success" => false, "message" => "Admin authentication required. Please log in with admin password."]);
   exit;
@@ -82,7 +82,7 @@ if ($notify) {
     if (count($emails) == 0) {
       $message .= " No verified students to email yet.";
     } else {
-      $site = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/announcements.php";
+      $site = app_base_url() . "/announcements.php";
       $mailBody = "<p><strong>" . h($category) . ":</strong> " . h($title) . "</p>"
         . "<p>" . nl2br(h(textCut($body, 400))) . "</p>"
         . ($deadlineVal ? "<p><strong>Deadline:</strong> " . h($deadlineVal) . "</p>" : "")

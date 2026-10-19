@@ -1,10 +1,15 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include 'db_connect.php';
 include 'helpers.php';
 @include 'mailer.php';
 
 header('Content-Type: application/json');
+
+if (!csrf_verify_request()) {
+  echo json_encode(["success" => false, "message" => "Security check failed. Please refresh the page and try again."]);
+  exit;
+}
 
 $email = strtolower(trim($_POST['email'] ?? ''));
 $name = trim($_POST['name'] ?? 'Student');
@@ -21,7 +26,22 @@ if ($chk && $chk->num_rows > 0) {
   exit;
 }
 
-$otp = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+// Throttle: 30 seconds between sends, max 5 sends per hour per browser session
+$now = time();
+if (($now - intval($_SESSION['signup_otp_last_sent'] ?? 0)) < 30) {
+  echo json_encode(["success" => false, "message" => "Please wait 30 seconds before requesting another code."]);
+  exit;
+}
+$_SESSION['signup_otp_sends'] = array_values(array_filter($_SESSION['signup_otp_sends'] ?? [], function ($t) use ($now) { return $t > $now - 3600; }));
+if (count($_SESSION['signup_otp_sends']) >= 5) {
+  echo json_encode(["success" => false, "message" => "Too many codes requested. Please try again in an hour."]);
+  exit;
+}
+$_SESSION['signup_otp_sends'][] = $now;
+$_SESSION['signup_otp_last_sent'] = $now;
+
+$otp = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
+$_SESSION['signup_otp_attempts'] = 0;
 $_SESSION['signup_otp'] = $otp;
 $_SESSION['signup_otp_email'] = $email;
 $_SESSION['signup_otp_expires'] = time() + 600;
@@ -36,8 +56,13 @@ if (function_exists('sendEmail')) {
 
 if ($sent) {
   echo json_encode(["success" => true, "message" => "6-digit OTP sent to $email! Please check your inbox."]);
+} elseif (app_is_local()) {
+  // Developer convenience on localhost only: show the code if mail is not configured
+  echo json_encode(["success" => true, "message" => "OTP generated! (Local mode, email not sent. Use code: $otp)"]);
 } else {
-  echo json_encode(["success" => true, "message" => "OTP generated! (If email is delayed, use code: $otp)"]);
+  // On the live site never reveal the code. Without email delivery it would defeat the verification.
+  unset($_SESSION['signup_otp'], $_SESSION['signup_otp_email'], $_SESSION['signup_otp_expires']);
+  echo json_encode(["success" => false, "message" => "We could not send the email right now. Please try again later."]);
 }
 $conn->close();
 ?>

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include 'db_connect.php';
 include 'helpers.php';
 @include 'mailer.php';
@@ -62,7 +62,13 @@ if ($loggedIn) {
   $alreadyVerified = !empty($_SESSION['signup_otp_verified']) && ($sessionEmail === $email);
   $matchesNow = ($sessionEmail === $email) && ($sessionOtp !== '') && (time() <= $sessionExp) && hash_equals($sessionOtp, $postedOtp);
 
+  if (!$alreadyVerified && intval($_SESSION['signup_otp_attempts'] ?? 0) >= 5) {
+    unset($_SESSION['signup_otp'], $_SESSION['signup_otp_email'], $_SESSION['signup_otp_expires']);
+    renderProfileError("Too many wrong OTP attempts. Please go back and click Send OTP to get a new code.");
+  }
+
   if (!$alreadyVerified && !$matchesNow) {
+    $_SESSION['signup_otp_attempts'] = intval($_SESSION['signup_otp_attempts'] ?? 0) + 1;
     renderProfileError("Please verify your email address using the 6-digit OTP before creating your profile.");
   }
 
@@ -82,7 +88,8 @@ if ($loggedIn) {
 
 if ($conn->query($sql) === TRUE) {
   $_SESSION['profileName'] = $name;
-  unset($_SESSION['signup_otp'], $_SESSION['signup_otp_email'], $_SESSION['signup_otp_expires'], $_SESSION['signup_otp_verified']);
+  unset($_SESSION['signup_otp'], $_SESSION['signup_otp_email'], $_SESSION['signup_otp_expires'], $_SESSION['signup_otp_verified'], $_SESSION['signup_otp_attempts']);
+  session_regenerate_id(true);
   $conn->close();
   if ($loggedIn) {
     header("Location: profile.php?saved=1");

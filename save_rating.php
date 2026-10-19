@@ -1,9 +1,14 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include 'db_connect.php';
 include 'helpers.php';
 
 header('Content-Type: application/json');
+
+if (!csrf_verify_request()) {
+  echo json_encode(["success" => false, "message" => "Security check failed. Please refresh the page and try again."]);
+  exit;
+}
 
 if (!isset($_SESSION['profileName'])) {
   echo json_encode(["success" => false, "message" => "You must be logged in to rate someone."]);
@@ -11,10 +16,10 @@ if (!isset($_SESSION['profileName'])) {
 }
 
 $rater = $_SESSION['profileName'];
-$target_id = intval($_POST['target_id']);
-$target_name = $_POST['target_name'];
-$rating = intval($_POST['rating']);
-$comment = $conn->real_escape_string($_POST['comment']);
+$target_id = intval($_POST['target_id'] ?? 0);
+$target_name = $_POST['target_name'] ?? '';
+$rating = intval($_POST['rating'] ?? 0);
+$comment = $conn->real_escape_string($_POST['comment'] ?? '');
 
 if ($rater == $target_name) {
   echo json_encode(["success" => false, "message" => "You can't rate yourself!"]);

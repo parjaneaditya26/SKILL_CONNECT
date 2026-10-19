@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include 'db_connect.php';
 include 'helpers.php';
 @include 'mailer.php';
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       $t = $conn->real_escape_string($token);
       $conn->query("UPDATE users SET reset_token='$t', reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id={$user['id']}");
 
-      $resetLink = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=$token";
+      $resetLink = app_base_url() . "/reset_password.php?token=$token";
 
       $sent = false;
       if (function_exists('sendEmail')) {

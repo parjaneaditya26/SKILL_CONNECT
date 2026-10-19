@@ -1,10 +1,15 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include 'db_connect.php';
 include 'helpers.php';
 @include_once 'ai_config.php';
 
 header('Content-Type: application/json');
+
+if (!csrf_verify_request()) {
+  echo json_encode(["reply" => "Security check failed. Please refresh the page and try again."]);
+  exit;
+}
 
 ensureSchema($conn);
 

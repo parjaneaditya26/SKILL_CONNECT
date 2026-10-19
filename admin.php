@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 if (empty($_SESSION["isAdmin"])) {
   header("Location: login.php");
   exit;
@@ -341,6 +341,7 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
                   <td class="action-cell">
 
                     <form action="admin_delete_user.php" method="POST" class="inline-form" onsubmit="return confirm('Delete this user?');">
+                      <?php echo csrf_field(); ?>
                       <input type="hidden" name="id" value="<?php echo $u['id']; ?>">
                       <button type="submit" class="admin-delete-btn">Delete</button>
                     </form>
@@ -589,6 +590,7 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
                   <td><?php echo h($r['created_at']); ?></td>
                   <td>
                     <form action="admin_delete_request.php" method="POST" class="inline-form" onsubmit="return confirm('Delete this connection request?');">
+                      <?php echo csrf_field(); ?>
                       <input type="hidden" name="id" value="<?php echo $r['id']; ?>">
                       <button type="submit" class="admin-delete-btn">Delete</button>
                     </form>
@@ -625,6 +627,7 @@ layoutStart("Admin Control Center", "Admin Control Center", "Comprehensive campu
                   <td><?php echo h($rp['created_at']); ?></td>
                   <td>
                     <form action="admin_delete_report.php" method="POST" class="inline-form" onsubmit="return confirm('Dismiss this report?');">
+                      <?php echo csrf_field(); ?>
                       <input type="hidden" name="id" value="<?php echo $rp['id']; ?>">
                       <button type="submit" class="admin-delete-btn">Dismiss</button>
                     </form>

@@ -1,3 +1,21 @@
+# Never serve secret / internal files
 <Files ".env">
     Require all denied
 </Files>
+<FilesMatch "^(mailer_config(\.example)?\.php|ai_config\.php|db_connect\.php|mailer\.php|session_init\.php|helpers\.php|\.gitignore|\.env\.example|.*\.sql|.*\.md)$">
+    Require all denied
+</FilesMatch>
+
+# No folder listings
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# After your SSL certificate is active, remove the # in front of the 3 lines below to force https:
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]

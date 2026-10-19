@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/session_init.php';
 include 'db_connect.php';
 include 'helpers.php';
 
@@ -26,6 +26,7 @@ $savedBanner = isset($_GET['saved']) ? "Profile saved! Your skills and details a
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="<?php echo h(csrf_token()); ?>">
   <title><?php echo $loggedIn ? "Edit My Profile" : "Create Your Profile"; ?> - Skill Connect</title>
   <link rel="stylesheet" href="style.css">
 </head>

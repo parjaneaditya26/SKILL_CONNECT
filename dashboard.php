@@ -1,5 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
+require_once __DIR__ . '/session_init.php';
 include_once 'db_connect.php';
 include_once 'helpers.php';
 

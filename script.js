@@ -1,3 +1,4 @@
+const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
 const getStartedBtn = document.getElementById("getStartedBtn");
 const currentUser = (document.body && document.body.dataset.user) ? document.body.dataset.user : "";
 
@@ -186,7 +187,7 @@ if (chatToggle && chatWindow && chatMessages) {
 
     fetch("chatbot.php", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: { "Content-Type": "application/x-www-form-urlencoded", "X-CSRF-Token": CSRF_TOKEN },
       body: params
     })
       .then(function (response) { return response.json(); })
@@ -233,7 +234,7 @@ function showToast(message, isError) {
 }
 
 function ajaxAction(url, formData, onSuccess) {
-  fetch(url, { method: "POST", headers: { "X-Requested-With": "XMLHttpRequest" }, body: formData })
+  fetch(url, { method: "POST", headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": CSRF_TOKEN }, body: formData })
     .then(function (response) { return response.json(); })
     .then(function (data) {
       showToast(data.message, !data.success);
@@ -347,7 +348,7 @@ if (sendSignupOtpBtn && signupEmailInput) {
 
     fetch("send_signup_otp.php", {
       method: "POST",
-      headers: { "X-Requested-With": "XMLHttpRequest" },
+      headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": CSRF_TOKEN },
       body: fd
     })
       .then(function (r) { return r.json(); })
@@ -405,7 +406,7 @@ if (verifySignupOtpBtn && signupOtpInput && signupEmailInput) {
 
     fetch("verify_signup_otp.php", {
       method: "POST",
-      headers: { "X-Requested-With": "XMLHttpRequest" },
+      headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": CSRF_TOKEN },
       body: fd
     })
       .then(function (r) { return r.json(); })
