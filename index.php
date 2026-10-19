@@ -92,6 +92,6 @@ if ($result2) { $row2 = $result2->fetch_assoc(); $connectionCount = intval($row2
     <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
   <?php renderChatbot(); ?>
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>

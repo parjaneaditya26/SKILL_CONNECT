@@ -183,12 +183,18 @@ if (chatToggle && chatWindow && chatMessages) {
     chatMessages.appendChild(loadingMsg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    const params = "message=" + encodeURIComponent(text) + "&history=" + encodeURIComponent(JSON.stringify(recentContext));
+    // Some free hosts block requests that contain raw JSON/markdown text, so the message and the
+    // history are packed into plain letters and numbers (base64) and sent as a normal form upload.
+    function toB64(str) { return btoa(unescape(encodeURIComponent(str))); }
+    const chatForm = new FormData();
+    chatForm.append("message_b64", toB64(text));
+    chatForm.append("history_b64", toB64(JSON.stringify(recentContext)));
+    chatForm.append("csrf_token", CSRF_TOKEN);
 
     fetch("chatbot.php", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", "X-CSRF-Token": CSRF_TOKEN },
-      body: params
+      headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-Token": CSRF_TOKEN },
+      body: chatForm
     })
       .then(function (response) { return response.json(); })
       .then(function (data) {

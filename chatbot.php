@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 @set_time_limit(30);
 ob_start();
 register_shutdown_function(function () {
+  if (defined('CHATBOT_DEBUG')) { return; }   // used only by the admin diagnostic page
   $out = ob_get_contents();
   if ($out === false || json_decode(trim((string)$out), true) === null) {
     @ob_end_clean();
@@ -25,8 +26,16 @@ if (!csrf_verify_request()) {
 
 ensureSchema($conn);
 
-$userMessage = isset($_POST['message']) ? trim($_POST['message']) : "";
-$historyJson = isset($_POST['history']) ? $_POST['history'] : "[]";
+if (isset($_POST['message_b64'])) {
+  $userMessage = trim((string)base64_decode((string)$_POST['message_b64'], true));
+} else {
+  $userMessage = isset($_POST['message']) ? trim($_POST['message']) : "";
+}
+if (isset($_POST['history_b64'])) {
+  $historyJson = (string)base64_decode((string)$_POST['history_b64'], true);
+} else {
+  $historyJson = isset($_POST['history']) ? $_POST['history'] : "[]";
+}
 $history = json_decode($historyJson, true);
 if (!is_array($history)) { $history = []; }
 

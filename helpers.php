@@ -568,7 +568,7 @@ function layoutEnd($mode = 'user') {
     <p>Built with HTML, CSS, JavaScript, PHP &amp; MySQL</p>
   </footer>
   <?php if ($mode !== 'admin') { renderChatbot(); } ?>
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>
 <?php
